@@ -1,0 +1,8 @@
+p { text-align: left !important; padding-bottom: 5px; }
+h3 { padding-top: 30px; }
+th, td { text-align: left; padding: 0 25px 10px 0; }
+th { border-bottom: 1px solid black; }
+.content { display: flex; flex-direction: row; }
+.menu a { white-space: nowrap; }
+.menu a::after { content: "\a"; white-space: pre; }
+.menu { padding-right: 50px; }

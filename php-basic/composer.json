@@ -1,0 +1,23 @@
+{
+    "name": "losys/losys-demo",
+    "type": "project",
+    "description": "demonstrating the use of the www.losys.ch customer API",
+    "keywords": ["losys"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+
+        "ext-json": "*",
+        "ext-intl": "*",
+
+        "vlucas/phpdotenv": "^5.5",
+        "league/oauth2-client": "^2.6",
+        "guzzlehttp/guzzle": "^7.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Losys\\CustomerApi\\Client\\": "src/Client",
+            "Losys\\Demo\\": "src/"
+        }
+    }
+}

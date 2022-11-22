@@ -9,12 +9,17 @@
         <div>
             <h1>Default settings</h1>
             <p>
-                this page demonstrates how to embed the listing of all your
-                projects listed at losys.ch into a demo-website.
+                this page demonstrates how to embed the listing of your
+                projects listed at <a href="https://www.referenz-verwaltung.ch">referenz-verwaltung.ch</a>
+                into this demo-website.
             </p>
             <p>
-                the following list of projects is rendered on the fly by the losys.ch
-                backend and injected into this demo-website.
+                the following list of projects is rendered on the fly by the Losys
+                backend and injected into this demo website.
+            </p>
+            <p>
+                the language used in the project-listing is automatically adapted
+                to the language you configured in the settings of your browser.
             </p>
 
             <div>
@@ -25,7 +30,7 @@
             </div>
 
             <p>
-                this is a static footer-text on our test-website.
+                this is a static footer-text on the test-website.
             </p>
         </div>
     </div>

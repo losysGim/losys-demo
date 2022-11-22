@@ -18,23 +18,26 @@
     <div>
         <h1>No Bootstrap</h1>
         <p>
-            this page demonstrates how to embed the listing of all your
-            projects listed at losys.ch into a demo-website.
+            this page demonstrates how to embed the listing of your
+            projects listed at <a href="https://www.referenz-verwaltung.ch">referenz-verwaltung.ch</a>
+            into this demo-website.
         </p>
         <p>
-            the losys website included here uses <a href="https://getbootstrap.com/docs/4.6/getting-started/introduction/">bootstrap v4</a>,
+            the html that our backend creates uses common libraries like
+            <a href="https://getbootstrap.com/docs/4.6/getting-started/introduction/">bootstrap v4</a>,
             <a href="https://developer.snapappointments.com/bootstrap-select/">Bootstrap-select v1.13</a> and
             <a href="https://jquery.com/download/">jQuery 3.6</a>.
-            in the default-mode we do automatically include these required libraries in the loaded &lt;div&gt;.
         </p>
         <p>
-            if you already use jQuery or Bootstrap in your own website it will cause problems if the libraries
-            are loaded twice. therefor - if you make sure jQuery and Bootstrap are loaded in your website - you
-            can tell our API not to include these libraries.
+            in the default-mode these libraries are loaded from inside the generated &lt;div&gt;.
+            if you already use jQuery or Bootstrap in your own website this will cause the libraries to be
+            loaded twice and thus create problems. therefor - if you for example jQuery and Bootstrap are
+            already loaded by your own website - you can tell our API not to load these libraries again.
         </p>
         <p>
-            in this example-page we did include jQuery and Bootstrap in the &lt;head&gt; of the page and did
-            not include them again in the &lt;div&gt; with the project-listing using the 'skip_includes'-parameter.
+            in this example page we already included jQuery and Bootstrap in the &lt;head&gt; of the webpage. thus
+            we instructed the Losys API not to include them again in the &lt;div&gt; with the project-listing
+            using the 'skip_includes'-parameter.
         </p>
 
         <div>
@@ -42,14 +45,14 @@
             $client = new LosysClient();
             echo $client->callApi('api/customer/project/html/box', ['skip_includes' => ['jquery', 'bootstrap']], 'GET', 'text/html');
             /*
-             * available options for 'skip_includes' include
-             * 'bootstrap', 'polyfill', 'jquery', 'popper', 'select2'
-             */
+            * available options for 'skip_includes' include
+            * 'bootstrap', 'polyfill', 'jquery', 'popper', 'select2'
+            */
             ?>
         </div>
 
         <p>
-            this is a static footer-text on our test-website.
+            this is a static footer-text on the test-website.
         </p>
     </div>
 </div>

@@ -12,8 +12,9 @@
     <div>
         <h1>JSON data</h1>
         <p>
-            this page demonstrates how to embed the listing of all your
-            projects listed at losys.ch into a demo-website.
+            this page demonstrates how to embed the listing of your
+            projects listed at <a href="https://www.referenz-verwaltung.ch">referenz-verwaltung.ch</a>
+            into this demo-website.
         </p>
         <p>
             the other pages show how to get (pre-)rendered html from our
@@ -21,18 +22,18 @@
             projects with all related information in JSON-format.
         </p>
         <p>
-            you can gain full access to all data-fields using this method,
-            but you need to render the project-listing yourself if you want
-            to show the projects to the user.
+            you gain full access to all data-fields using this method.
+            the downside is you need to render the project-listing yourself
+            if you want to show it to the user.
         </p>
         <p>
             at this page we only show a list of the project-titles of
             the first 10 projects.
         </p>
         <p>
-            this is a very powerful API. this simple example is only a very
+            this is a very powerful API. this simple example demonstrates only a
             basic usage scenario. consult the API-documentation to read
-            about additional functionality that the API provides.
+            about additional functionality the API provides.
         </p>
 
         <div>
@@ -70,7 +71,7 @@
              */
 
             // render the project-titles
-            echo '<h3>this is custom rendering (only titles)</h3>';
+            echo '<h3>custom rendering</h3>';
             echo '<table><tbody>';
             echo '<tr>'
                  . implode('', array_map(fn ($value) => '<th>' . htmlentities($value) . '</th>', [
@@ -82,7 +83,7 @@
                  . '</tr>';
             foreach($data as $project)
                 echo '<tr>'
-                     . implode('', array_map(fn ($value) => '<td>' . htmlentities($value) . '</td>', [
+                     . implode('', array_map(fn ($value) => '<td>' . htmlentities($value??'') . '</td>', [
                         $project['title'],
                         $project['canton'],
                         $project['yearOfCompletion'],
@@ -98,7 +99,7 @@
         </div>
 
         <p>
-            this is a static footer-text on our test-website.
+            this is a static footer-text on the test-website.
         </p>
     </div>
 </div>

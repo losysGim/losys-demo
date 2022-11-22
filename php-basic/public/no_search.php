@@ -9,8 +9,9 @@
     <div>
         <h1>No search-box</h1>
         <p>
-            this page demonstrates how to embed the listing of all your
-            projects listed at losys.ch into a demo-website.
+            this page demonstrates how to embed the listing of your
+            projects listed at <a href="https://www.referenz-verwaltung.ch">referenz-verwaltung.ch</a>
+            into this demo-website.
         </p>
         <p>
             the default search-box is not rendered here.
@@ -28,7 +29,7 @@
         </div>
 
         <p>
-            this is a static footer-text on our test-website.
+            this is a static footer-text on the test-website.
         </p>
     </div>
 </div>

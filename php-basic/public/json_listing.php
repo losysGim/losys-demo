@@ -39,11 +39,11 @@
         <div>
             <?php
             $client = new LosysClient();
-            $data = $client->callApi('api/customer/project', ['limit' => 10, 'expand' => 'language,project_images']);
+            $data = $client->callApi('api/customer/project', ['limit' => 10, 'groupId' => 4, 'expand' => 'language,project_images']);
             /*
              * you may provide filter-parameters to query only
              * selected projects. available parameters include
-             * 'year_from', 'year_to', 'projectIds', 'companyIds',
+             * 'yearFrom', 'yearTo', 'projectIds', 'companyIds',
              * 'groupIds', 'languages', 'categoryIds', 'cantons'
              * or 'status'.
              *
@@ -87,7 +87,7 @@
                         $project['title'],
                         $project['canton'],
                         $project['yearOfCompletion'],
-                        count($project['project_images'])
+                        array_key_exists('project_images', $project) ? count($project['project_images']) : '???'
                      ]))
                      . '</tr>';
             echo '</tbody></table>';

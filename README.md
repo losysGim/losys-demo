@@ -4,7 +4,7 @@ the projects in this repository demonstrate the usage of the Losys Customer API
 to use your project-data from [www.referenz-verwaltung.ch](https://[www.referenz-verwaltung.ch])
 in your own website or company software.
 
-if you have any questions contact us via [support@losys.ch](mailto:support@losys.ch)
+if you have any questions contact us via [info@losys.ch](mailto:info@losys.ch)
 or visit [www.losys.ch](https://www.losys.ch)
 
 ### Legal note

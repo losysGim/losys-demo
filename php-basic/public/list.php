@@ -1,10 +1,10 @@
-<?php use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/../vendor/autoload.php'; ?>
+<?php use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/../vendor/autoload.php'; require __DIR__ . '/../src/base.php'; ?>
 <html lang="en">
 <title>Demo Website</title>
 <link rel="stylesheet" href="style.css">
 <style>
     .projects .card-title { color: red; }
-    .card-view { border: 1px solid blue; margin-bottom: 25px; }
+    .card-view { border: 5px solid blue; margin-bottom: 25px; }
     .card-view .indicators { display: none; }
 </style>
 <body>
@@ -37,7 +37,7 @@
         <div class="projects">
             <?php
             $client = new LosysClient();
-            echo $client->callApi('api/customer/project/html/list', ['year_from' => 2022], 'GET', 'text/html');
+            echo $client->callApi('api/customer/project/html/list', ['year_from' => 2022], 'GET', 'html');
             /*
              * available filter-parameters include
              * 'year_to', 'projectIds', 'companyIds', 'groupIds',

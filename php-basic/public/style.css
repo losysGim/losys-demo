@@ -6,3 +6,4 @@ th { border-bottom: 1px solid black; }
 .menu a { white-space: nowrap; }
 .menu a::after { content: "\a"; white-space: pre; }
 .menu { padding-right: 50px; }
+.error { padding: 10px; border: 3px solid red; background-color: lightcoral; }

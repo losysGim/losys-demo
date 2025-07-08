@@ -1,4 +1,4 @@
-<?php use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/../vendor/autoload.php'; ?>
+<?php use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/../vendor/autoload.php'; require __DIR__ . '/../src/base.php'; ?>
 <html lang="en">
 <title>Demo Website</title>
 <link rel="stylesheet" href="style.css">
@@ -38,8 +38,10 @@
 
         <div>
             <?php
+            $offset = array_key_exists('offset', $_REQUEST) ? filter_var($_REQUEST['offset'], FILTER_VALIDATE_INT) : null;
+
             $client = new LosysClient();
-            $data = $client->callApi('api/customer/project', ['limit' => 10, 'groupId' => 4, 'expand' => 'language,project_images']);
+            $data = $client->callApi('api/customer/project', ['limit' => 10, 'offset' => $offset, 'groupId' => 4, 'expand' => 'language,project_images']);
             /*
              * you may provide filter-parameters to query only
              * selected projects. available parameters include
@@ -66,7 +68,7 @@
              * instead of these '*' returns all available related
              * entities.
              *
-             * use 'limit' and 'start' to control how many dataset
+             * use 'limit' and 'offset' to control how many dataset
              * starting at which offset will be returned.
              */
 
@@ -91,6 +93,8 @@
                      ]))
                      . '</tr>';
             echo '</tbody></table>';
+
+            echo '<p><a href="?offset=' . (($offset ?? 0) + 10) . '">next page</a></p>';
 
             // show the received JSON
             echo '<h3>this is what the api really returns</h3>';

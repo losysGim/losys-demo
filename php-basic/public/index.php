@@ -1,4 +1,4 @@
-<?php use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/../vendor/autoload.php'; ?>
+<?php use GuzzleHttp\Exception\GuzzleException, Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu, \League\OAuth2\Client\Provider\Exception\IdentityProviderException, Losys\CustomerApi\Client\LosysBackendException; require __DIR__ . '/../vendor/autoload.php'; require __DIR__ . '/../src/base.php'; ?>
 <html lang="en">
     <title>Demo Website</title>
     <link rel="stylesheet" href="style.css">
@@ -24,8 +24,26 @@
 
             <div>
                 <?php
-                $client = new LosysClient();
-                echo $client->callApi('api/customer/project/html/box', [], 'GET', 'text/html');
+                try
+                {
+                    // to see the error-handling in action try providing ['offset' => 'xx'] as $data-parameter to $client->callApi()
+                    $client = new LosysClient();
+                    echo $client->callApi('api/customer/project/html/box', [], 'GET', 'html');
+
+                } catch (LosysBackendException $e) {
+                     // indicates the Losys API returned an error
+                    echo
+                        "<p class='error'>\"{$e->getErrorType()}\"-Error with Code #{$e->getErrorCode()} from Losys-API: {$e->getMessage()}<br />"
+                        . "If you need to contact Losys-Support on this error please provide your Request-Id \"{$e->getRequestId()}\"</p>";
+
+                } catch (GuzzleException $e) {
+                    // indicates there is a problem connecting to the server or a network-problem (e.g. no internet-access)
+                    echo "<p class='error'>Network-/Transmission-Error: {$e->getMessage()}</p>";
+
+                } catch (IdentityProviderException $e) {
+                    // indicates there is an error authenticating against the Losys API
+                    echo "<p class='error'>You could not be authenticated (check LOSYS_CLIENT_ID and LOSYS_CLIENT_SECRET in your .env-file): {$e->getMessage()}</p>";
+                }
                 ?>
             </div>
 

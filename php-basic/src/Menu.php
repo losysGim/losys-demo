@@ -18,7 +18,7 @@ class Menu {
     {
         $result = [];
         foreach($this->getEntries() as $file => $title)
-            $result[] = '<a href="' . $file . '">' . htmlentities($title) . '</a><br />';
+            $result[] = "<a href=\"{$file}\">" . htmlentities($title) . '</a><br />';
 
         return implode('', $result);
     }

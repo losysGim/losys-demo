@@ -4,6 +4,7 @@ namespace Losys\CustomerApi\Client;
 
 use Dotenv\Dotenv;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Header;
 use GuzzleHttp\Utils;
@@ -28,6 +29,8 @@ class LosysClient {
 
     private ?Client               $client = null;
     private ?string               $locale = null;
+
+    private const string          DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
 
 
     public function __construct()
@@ -59,7 +62,7 @@ class LosysClient {
      * tries to get the locale from the browser of the client
      * accessing our website.
      *
-     * @return string       e.g. 'de' or 'en_US
+     * @return string       e.g. 'de' or 'en-US
      */
     protected function getLocale(): string
     {
@@ -69,12 +72,15 @@ class LosysClient {
         try {
             $this->locale = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 
-        } catch (IntlException $exception) {
+        } catch (IntlException) {
             $this->locale = null;
         }
 
         if (!$this->locale)
             $this->locale = 'de';
+
+        if (preg_match('/^[A-Za-z]{2}_[A-Za-z]{2}$/', $this->locale))
+            $this->locale = str_replace('_', '-', $this->locale);
 
         return $this->locale;
     }
@@ -84,7 +90,7 @@ class LosysClient {
      *
      * @return AccessTokenInterface
      *
-     * @throws IdentityProviderException
+     * @throws IdentityProviderException|GuzzleException
      */
     protected function getAccessToken(): AccessTokenInterface
     {
@@ -113,6 +119,7 @@ class LosysClient {
      *                                        example: 'GET', 'PUT', 'POST' or 'DELETE'
      * @param string $expectedContentType     the mime-type of the response that you
      *                                        expect the api to return.
+     *                                        use the internal alias 'html' if you want text/html or something else.
      *                                        example: 'application/json' or 'text/html' or 'application/pdf'
      * @param array  $guzzleRequestOptions    additional options for the guzzle http-client
      *                                        see https://docs.guzzlephp.org/en/stable/request-options.html
@@ -134,7 +141,8 @@ class LosysClient {
         if (!$this->client)
             $this->client = new Client([
                 'base_uri' => $this->losys_instance_uri,
-                'timeout'  => 30
+                'timeout'  => 30,
+                'cookies'  => true
             ]);
 
         if ($httpMethod === 'GET') {
@@ -146,38 +154,55 @@ class LosysClient {
             [
                 'headers' => [
                     'Authorization'   => 'Bearer ' . $this->getAccessToken()->getToken(),
-                    'Accept'          => $expectedContentType,
-                    'Accept-Language' => $this->getLocale()
+                    'Accept'          => $expectedContentType === 'html' ? self::DEFAULT_ACCEPT_HTML : $expectedContentType,
+                    'Accept-Language' => $this->getLocale(),
+                    'Accept-Encoding' => 'gzip, deflate'
                 ]
             ],
             $guzzleRequestOptions
         );
 
-        $response =
-            $this->client->request(
-                $httpMethod,
-                $uri,
-                $options
-            );
+        try {
+            $response =
+                $this->client->request(
+                    $httpMethod,
+                    $uri,
+                    $options
+                );
+        } catch (BadResponseException $e) {
+            if ($e->hasResponse()
+                && $this->isJsonResponse($response = $e->getResponse())
+                && ($body = $response->getBody()->getContents())
+                && is_array($error = Utils::jsonDecode($body, true))
+                && array_key_exists('error', $error)
+                && is_array($error['error'])
+                && array_key_exists('message', $error['error']))
+            {
+                throw new LosysBackendException($error['error'], $e);
+            }
+            throw $e;
+        }
 
         if (($response->getStatusCode() >= 200)
-            && ($response->getStatusCode() < 300)) {
-            if (is_array($mimeType = Header::parse($response->getHeader('Content-Type') ?? ''))
-                && array_key_exists(0, $mimeType)
-                && is_array($first = $mimeType[0])
-                && array_key_exists(0, $first)) {
-                $mimeType = $first[0];
-            } else
-                $mimeType = null;
-
+            && ($response->getStatusCode() < 300))
+        {
             $body = $response->getBody()->getContents();
 
             return
-                ($mimeType == 'application/json')
+                $this->isJsonResponse($response)
                     ? Utils::jsonDecode($body, true)
                     : $body;
         }
 
         return $response;
+    }
+
+    private function isJsonResponse(ResponseInterface $response): bool
+    {
+        return
+            array_key_exists(0, $mimeType = Header::parse($response->getHeader('Content-Type')))
+            && is_array($first = $mimeType[0])
+            && array_key_exists(0, $first)
+            && preg_match('%^application/json($|[+;])%i', $first[0]);
     }
 }

@@ -4,8 +4,8 @@ this project demonstrates how you can easily include a listing of your project-r
 from referenz-verwaltung.ch into your website (without the use of the Customer API).
 
 ## Requirements
-- tested with PHP 8.1 (should also work with version 7)
-- tested on Linux (Ubuntu 22) and Windows 11
+- tested with PHP 8.4 (should also work with versions 7 and 8.1)
+- tested on Linux (Ubuntu 22.04.5 LTS and 24.04.2 LTS) and Windows 11
 - PHP's buildin webserver is sufficient for the purpose of this demo  
 
 ## Installation

@@ -1,5 +1,8 @@
 <?php
-preg_match('%(/[^?]+)($|\\?)%', $_SERVER['REQUEST_URI'], $match);
+if (!preg_match('%(/[^?]+)($|\\?)%', $_SERVER['REQUEST_URI'], $match)
+    && $_SERVER['PHP_SELF'] == '/index.php')
+    return;
+
 if (substr_count($_SERVER['PHP_SELF'], '/') != 1
     || !in_array($match[1], ['/', $_SERVER['PHP_SELF']]))
 {

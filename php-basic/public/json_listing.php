@@ -41,13 +41,27 @@
             $offset = array_key_exists('offset', $_REQUEST) ? filter_var($_REQUEST['offset'], FILTER_VALIDATE_INT) : null;
 
             $client = new LosysClient();
-            $data = $client->callApi('api/customer/project', ['limit' => 10, 'offset' => $offset, 'groupId' => 4, 'expand' => 'language,project_images']);
+            $data = $client->callApi('api/customer/project', ['limit' => 10, 'offset' => $offset, 'expand' => 'language,project_images']);
             /*
              * you may provide filter-parameters to query only
              * selected projects. available parameters include
              * 'yearFrom', 'yearTo', 'projectIds', 'companyIds',
-             * 'groupIds', 'languages', 'categoryIds', 'cantons'
-             * or 'status'.
+             * 'groupIds', 'languages', 'categoryIds', 'cantons',
+             * 'status', 'visibility' or 'withImage'.
+             *
+             * use 'searchText' and 'searchTextIn' (which may be either
+             * 'project', 'companies' or 'typeOfWork') for full-text-
+             * searches. Optionally use 'concatenation' as 'and' or 'or'
+             * here.
+             *
+             * to order the returned list use 'orderBy' which may be
+             * an array of 0..x of 'yearOfCompletion', 'hasImage', 'id',
+             * 'zipcode', 'city', 'priority' and 'canton'.
+             *
+             * hint:
+             *   you may use /api/v1/project/filter_multiple_choice_values
+             *   to see a list of all available values per filter-option
+             *   (e.g. all 'canton'-s that your projects use).
              *
              * you can also provide an 'expand'-parameter asking
              * to include related entities in the response. it is

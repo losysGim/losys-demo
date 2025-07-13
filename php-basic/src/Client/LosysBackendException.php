@@ -3,7 +3,6 @@
 namespace Losys\CustomerApi\Client;
 
 use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Psr7\Header;
 
 class LosysBackendException
     extends BadResponseException
@@ -15,7 +14,7 @@ class LosysBackendException
     {
         $this->error = $error;
         parent::__construct(
-            $this->getMessageInternal($error, $previous),
+            self::getMessageInternal($error, $previous),
             $previous->getRequest(),
             $previous->getResponse(),
             $previous,
@@ -23,7 +22,7 @@ class LosysBackendException
         );
     }
 
-    protected static function getMessageInternal(array $error, BadResponseException $previous): string
+    public static function getMessageInternal(array $error, BadResponseException $previous): string
     {
         if (!array_key_exists('message', $error)
             || !($message = $error['message']))

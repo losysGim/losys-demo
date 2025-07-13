@@ -173,12 +173,16 @@ class LosysClient {
             if ($e->hasResponse()
                 && $this->isJsonResponse($response = $e->getResponse())
                 && ($body = $response->getBody()->getContents())
-                && is_array($error = Utils::jsonDecode($body, true))
-                && array_key_exists('error', $error)
-                && is_array($error['error'])
-                && array_key_exists('message', $error['error']))
+                && is_array($error = Utils::jsonDecode($body, true)))
             {
-                throw new LosysBackendException($error['error'], $e);
+                if (array_key_exists('error', $error)
+                    && is_array($error['error'])
+                    && array_key_exists('message', $error['error']))
+                {
+                    throw new LosysBackendException($error['error'], $e);
+                } else {
+                    throw new BackendErrorResponseException($error, $e);
+                }
             }
             throw $e;
         }

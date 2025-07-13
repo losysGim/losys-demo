@@ -10,7 +10,8 @@ class Menu {
             'no_search.php'     => 'No Search',
             'no_bootstrap.php'  => 'No Bootstrap',
             'list.php'          => 'Plain Listing',
-            'json_listing.php'  => 'JSON data'
+            'json_listing.php'  => 'JSON data',
+            'pdf.php'           => 'PDF-Generation',
         ];
     }
 

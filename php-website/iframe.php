@@ -6,20 +6,21 @@
 
         <style>
             .top, .left, .content { padding: 1rem 1rem 1rem 1rem; margin: 0.5rem 0.5rem 0.5rem 0.5rem; }
-            .container { display: flex; }
             .column { flex-direction: column; }
             .row { flex-direction: row; }
 
             .top { background-color: aliceblue; min-height: 3rem; }
             .left { background-color: antiquewhite; }
-            .content { background-color: lavender; flex-grow: 2; }
+            .content { background-color: lavender; width: 100%; flex-direction: column; }
+            .container, .content, iframe { display: flex; align-items: stretch; flex: 1; }
+            html, body { display: flex; flex-direction: column; height: 100%; margin: 0; }
         </style>
     </head>
 
     <body>
 <?php
     $config = json_decode(file_get_contents('config.json'), true, 512, JSON_THROW_ON_ERROR);
-    if (strpos($config['link'], '(') !== false)
+    if (str_contains($config['link'], '('))
         throw new InvalidArgumentException('you must insert the customized URI to your project-box into the file config.json!');
 ?>
         <div class="container column">
@@ -41,7 +42,7 @@
                     <p>this is the content-section with your regular website-content.</p>
                     <p>we include the "Losys Project Box" below this text using an <strong>&lt;iframe&gt;</strong>-element.</p>
 
-                    <iframe style="width:1px; min-width:100%;" src="<?php echo $config['link']; ?>"></iframe>
+                    <iframe src="<?php echo $config['link']; ?>"></iframe>
                     <script src="<?php echo $config['link']; ?>/losys.js"></script>
                 </div>
             </div>

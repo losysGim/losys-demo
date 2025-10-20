@@ -25,7 +25,7 @@
     <body>
 <?php
     $config = json_decode(file_get_contents('config.json'), true, 512, JSON_THROW_ON_ERROR);
-    if (strpos($config['link'], '(') !== false)
+    if (str_contains($config['link'], '('))
         throw new InvalidArgumentException('you must insert the customized URI to your project-box into the file config.json!');
 ?>
         <div class="my-container my-column">
@@ -76,7 +76,7 @@
         <!-- this is the JavaScript that loads the project-box -->
         <script>
             $(document).ready(() => {
-                $('#losys').load("<?php echo $config['link'] . (substr($config['link'], -1) == '/' ? '' : '/') . 'box?skip_includes[]=jquery'; ?>");
+                $('#losys').load("<?php echo $config['link'] . (str_ends_with($config['link'], '/') ? '' : '/') . 'box?skip_includes[]=jquery'; ?>");
             });
         </script>
     </body>

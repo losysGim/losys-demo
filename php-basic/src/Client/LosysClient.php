@@ -9,8 +9,8 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Header;
 use GuzzleHttp\Utils;
 use IntlException;
+use JsonException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
-use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -32,6 +32,8 @@ class LosysClient {
 
     private const string          DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
 
+    private array                 $additionalGuzzleOptions = [];
+
 
     public function __construct()
     {
@@ -42,6 +44,8 @@ class LosysClient {
      * reads the .env file into our setting-variables
      *
      * @return void
+     *
+     * @throws JsonException
      */
     protected function loadConfiguration(): void
     {
@@ -54,8 +58,26 @@ class LosysClient {
         $this->losys_client_id     = $config['LOSYS_CLIENT_ID'];
         $this->losys_client_secret = $config['LOSYS_CLIENT_SECRET'];
 
-        if (!str_starts_with($this->losys_instance_uri, '/'))
+        if (!str_ends_with($this->losys_instance_uri, '/'))
             $this->losys_instance_uri .= '/';
+
+        if (array_key_exists('GUZZLE_OPTIONS', $config)
+            && !empty($opt = $config['GUZZLE_OPTIONS']))
+        {
+            try
+            {
+                if (!is_array($opt = json_decode($opt, true, flags: JSON_THROW_ON_ERROR)))
+                    throw new JsonException('expected: array');
+            } catch (JsonException $e) {
+                throw new JsonException(
+                    "your .env-file-setting \"GUZZLE_OPTIONS\" is invalid: {$e->getMessage()}",
+                    $e->getCode(),
+                    $e
+                );
+            }
+
+            $this->additionalGuzzleOptions = $opt;
+        }
     }
 
     /**
@@ -97,13 +119,13 @@ class LosysClient {
         if ($this->access_token)
             return $this->access_token;
 
-        $client = new GenericProvider([
+        $client = new LosysProvider(array_merge([
             'clientId'                => $this->losys_client_id,
             'clientSecret'            => $this->losys_client_secret,
             'urlAccessToken'          => $this->losys_instance_uri . 'oauth/token',
             'urlAuthorize'            => '',
             'urlResourceOwnerDetails' => ''
-        ]);
+        ], $this->additionalGuzzleOptions));
 
         return $this->access_token = $client->getAccessToken('client_credentials');
     }
@@ -159,7 +181,8 @@ class LosysClient {
                     'Accept-Encoding' => 'gzip, deflate'
                 ]
             ],
-            $guzzleRequestOptions
+            $guzzleRequestOptions,
+            $this->additionalGuzzleOptions
         );
 
         try {

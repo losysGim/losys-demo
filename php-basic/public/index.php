@@ -43,6 +43,8 @@
                 } catch (IdentityProviderException $e) {
                     // indicates there is an error authenticating against the Losys API
                     echo "<p class='error'>You could not be authenticated (check LOSYS_CLIENT_ID and LOSYS_CLIENT_SECRET in your .env-file): {$e->getMessage()}</p>";
+                } catch (Throwable $e) {
+                    echo "<p class='error'>Error: {$e->getMessage()}</p>";
                 }
                 ?>
             </div>

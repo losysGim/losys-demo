@@ -12,8 +12,7 @@
             .top { background-color: aliceblue; min-height: 3rem; }
             .left { background-color: antiquewhite; }
             .content { background-color: lavender; width: 100%; flex-direction: column; }
-            .container, .content, iframe { display: flex; align-items: stretch; flex: 1; }
-            html, body { display: flex; flex-direction: column; height: 100%; margin: 0; }
+            .container, .content { display: flex; }
         </style>
     </head>
 

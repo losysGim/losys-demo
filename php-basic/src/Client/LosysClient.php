@@ -6,15 +6,18 @@ use Dotenv\Dotenv;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Header;
-use GuzzleHttp\Utils;
+use GuzzleHttp\Utils as GuzzleUtils;
 use IntlException;
 use JsonException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessTokenInterface;
+use Losys\Demo\Utils;
 use Psr\Http\Message\ResponseInterface;
 
-class LosysClient {
+class LosysClient
+{
     /*
      * settings red from the .env file
      */
@@ -33,6 +36,13 @@ class LosysClient {
     private const string          DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
 
     private array                 $additionalGuzzleOptions = [];
+
+    private ?float                $last_request_start = null;
+    private ?float                $last_duration_seconds = null;
+    private ?int                  $last_size_bytes = null;
+    private ?array                $last_response_headers = null;
+    private ?array                $last_request_info = null;
+    private ?array                $last_request_info_filtered = null;
 
 
     public function __construct()
@@ -185,6 +195,14 @@ class LosysClient {
             $this->additionalGuzzleOptions
         );
 
+        $this->resetLastResponseStatistics();
+        $this->last_request_info = [
+            'uri'     => $uri,
+            'method'  => $httpMethod,
+            'options' => $options,
+        ];
+        $this->last_request_info_filtered = null;
+
         try {
             $response =
                 $this->client->request(
@@ -192,11 +210,16 @@ class LosysClient {
                     $uri,
                     $options
                 );
-        } catch (BadResponseException $e) {
-            if ($e->hasResponse()
-                && $this->isJsonResponse($response = $e->getResponse())
-                && ($body = $response->getBody()->getContents())
-                && is_array($error = Utils::jsonDecode($body, true)))
+
+            $this->setLastResponseStatistics($response);
+        } catch (RequestException $e) {
+            $this->setLastResponseStatistics($response = $e->getResponse());
+
+            if (($e instanceof BadResponseException)
+                && $response
+                && $this->isJsonResponse($response)
+                && strlen($body = $response->getBody()->getContents())
+                && is_array($error = GuzzleUtils::jsonDecode($body, true)))
             {
                 if (array_key_exists('error', $error)
                     && is_array($error['error'])
@@ -207,7 +230,10 @@ class LosysClient {
                     throw new BackendErrorResponseException($error, $e);
                 }
             }
+
             throw $e;
+        } finally {
+            $this->setLastResponseStatistics(null);
         }
 
         if (($response->getStatusCode() >= 200)
@@ -217,11 +243,37 @@ class LosysClient {
 
             return
                 $this->isJsonResponse($response)
-                    ? Utils::jsonDecode($body, true)
+                    ? GuzzleUtils::jsonDecode($body, true)
                     : $body;
         }
 
         return $response;
+    }
+
+    private function resetLastResponseStatistics(): void
+    {
+        $this->last_duration_seconds = $this->last_size_bytes = $this->last_response_headers = null;
+        $this->last_request_start = microtime(true);
+    }
+
+    private function setLastResponseStatistics(?ResponseInterface $response): void
+    {
+        if (!is_null($this->last_request_start)
+            && is_null($this->last_duration_seconds))
+            $this->last_duration_seconds = (microtime(true) - $this->last_request_start);
+
+        if (is_null($response))
+            return;
+
+        $this->last_size_bytes =
+            $response->getBody()->getSize()
+            ?? strlen($response->getBody()->getContents() ?? '');
+
+        $this->last_response_headers =
+            array_combine(
+                array_map(fn($name) => strtolower($name), array_keys($headers = $response->getHeaders())),
+                $headers
+            );
     }
 
     private function isJsonResponse(ResponseInterface $response): bool
@@ -231,5 +283,31 @@ class LosysClient {
             && is_array($first = $mimeType[0])
             && array_key_exists(0, $first)
             && preg_match('%^application/json($|[+;])%i', $first[0]);
+    }
+
+    public function getLastResponseHeader(string $header): mixed
+    {
+        if (is_null($this->last_response_headers)
+            || !array_key_exists($key = strtolower($header), $this->last_response_headers))
+            return null;
+
+        return implode('', $this->last_response_headers[$key]);
+    }
+
+    public function getLastRequestInfo(): array
+    {
+        return $this->last_request_info_filtered ??= Utils::array_hide_secrets($this->last_request_info);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getLastResponseStatistics(): array
+    {
+        return [
+            'duration'      => is_null($this->last_duration_seconds) ? null : number_format($this->last_duration_seconds, 2) . ' seconds',
+            'response-size' => is_null($this->last_size_bytes) ? null : number_format($this->last_size_bytes / 1024, 1, '.', '\'') . ' kB',
+            'request-id'    => $this->getLastResponseHeader('X-Request-Id'),
+        ];
     }
 }

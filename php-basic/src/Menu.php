@@ -6,12 +6,13 @@ class Menu {
     protected function getEntries(): array
     {
         return [
-            'index.php'         => 'Default Settings',
-            'no_search.php'     => 'No Search',
-            'no_bootstrap.php'  => 'No Bootstrap',
-            'list.php'          => 'Plain Listing',
-            'json_listing.php'  => 'JSON data',
-            'pdf.php'           => 'PDF-Generation',
+            'index.php'             => 'Default Settings',
+            'no_search.php'         => 'No Search',
+            'no_bootstrap.php'      => 'No Bootstrap',
+            'list.php'              => 'Plain Listing',
+            'json_listing.php'      => 'JSON data',
+            'filtered_listing.php'  => 'Filters',
+            'pdf.php'               => 'PDF-Generation',
         ];
     }
 

@@ -2,8 +2,13 @@ p { text-align: left !important; padding-bottom: 5px; }
 h3 { padding-top: 30px; }
 th, td { text-align: left; padding: 0 25px 10px 0; }
 th { border-bottom: 1px solid black; }
+label { padding-right: 10px; }
 .content { display: flex; flex-direction: row; }
+.content_col { display: flex; flex-direction: column; }
 .menu a { white-space: nowrap; }
 .menu a::after { content: "\a"; white-space: pre; }
 .menu { padding-right: 50px; }
 .error { padding: 10px; border: 3px solid red; background-color: lightcoral; }
+.full_width { width: 100%; }
+.grow { flex: 1 1 100%; overflow: scroll; }
+pre { width: 95%; max-height: 1000px; overflow-y: scroll; overflow-x: scroll; border: 1px solid gray; }

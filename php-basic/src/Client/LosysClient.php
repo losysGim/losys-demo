@@ -304,10 +304,24 @@ class LosysClient
      */
     public function getLastResponseStatistics(): array
     {
-        return [
-            'duration'      => is_null($this->last_duration_seconds) ? null : number_format($this->last_duration_seconds, 2) . ' seconds',
-            'response-size' => is_null($this->last_size_bytes) ? null : number_format($this->last_size_bytes / 1024, 1, '.', '\'') . ' kB',
-            'request-id'    => $this->getLastResponseHeader('X-Request-Id'),
-        ];
+        $hasPaginationInfo =
+            !is_null($start = $this->getLastResponseHeader('X-Paginator-Start'))
+            && !is_null($limit = $this->getLastResponseHeader('X-Paginator-Limit'))
+            && !is_null($total = $this->getLastResponseHeader('X-Paginator-Total'));
+
+        return array_merge(
+            [
+                'duration'      => is_null($this->last_duration_seconds) ? null : number_format($this->last_duration_seconds, 2) . ' seconds',
+                'response-size' => is_null($this->last_size_bytes) ? null : number_format($this->last_size_bytes / 1024, 1, '.', '\'') . ' kB',
+                'request-id'    => $this->getLastResponseHeader('X-Request-Id'),
+            ],
+            $hasPaginationInfo
+                ? [
+                    'start' => $start,
+                    'limit' => $limit,
+                    'total' => $total,
+                  ]
+                : []
+        );
     }
 }

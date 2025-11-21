@@ -317,9 +317,11 @@ class LosysClient
             ],
             $hasPaginationInfo
                 ? [
-                    'start' => $start,
-                    'limit' => $limit,
-                    'total' => $total,
+                    'start'             => $start,
+                    'limit'             => $limit,
+                    'total'             => $total,
+                    'has-next-page'     => $this->getLastResponseHeader('X-Paginator-Has-Next-Page'),
+                    'has-previous-page' => $this->getLastResponseHeader('X-Paginator-Has-Previous-Page'),
                   ]
                 : []
         );

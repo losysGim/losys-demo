@@ -2,6 +2,7 @@
 
 namespace Losys\Demo;
 
+use Closure;
 use GuzzleHttp\Exception\GuzzleException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Losys\CustomerApi\Client\LosysBackendException;
@@ -16,7 +17,7 @@ class ApiResultRenderer
     }
 
     public function getProjectsFromApiAndRenderResults(array  $parameters = [],
-                                                       string $afterResultTable = ''): string
+                                                       ?Closure $afterResultTableClosure = null): string
     {
         try
         {
@@ -55,7 +56,7 @@ class ApiResultRenderer
 
             return $result .
                 '</tbody></table>'
-                .  $afterResultTable
+                .  $afterResultTableClosure?->call($this)
 
                 // show the received JSON
                 . '<h3>this is the raw-data the api really returned</h3>'

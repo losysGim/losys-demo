@@ -26,17 +26,24 @@
 
                 <div class="content_col grow">
                     <?php
-                    $offset = array_key_exists('offset', $_REQUEST)
-                        ? filter_var($_REQUEST['offset'], FILTER_VALIDATE_INT)
+                    $start = array_key_exists('start', $_REQUEST)
+                        ? filter_var($_REQUEST['start'], FILTER_VALIDATE_INT)
                         : null;
 
                     echo new ApiResultRenderer()->getProjectsFromApiAndRenderResults(
                         [
-                            'limit' => 10,
-                            'offset' => $offset,
+                            'limit' => 25,
+                            'start' => $start,
                             'expand' => 'language,project_images'
                         ],
-                        '<p><a href="?offset=' . (($offset ?? 0) + 10) . '">next page</a></p>'
+                        function() {
+                            $stats = $this->client->getLastResponseStatistics();
+                            if ($stats['has-next-page'])
+                            {
+                                return '<p><a href="?start=' . ($stats['start'] + $stats['limit']) . '">next page</a></p>';
+                            } else
+                                return '<p>This request was not paginated.</p>';
+                        }
                     );
 
                     /*

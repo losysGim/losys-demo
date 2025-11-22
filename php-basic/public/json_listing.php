@@ -18,7 +18,8 @@
                     you gain full access to all data-fields using this method. the downside is you need to render
                     the project-listing yourself if you want to show it to the user.
                 </p><p>
-                    at this page we only show a list of the project-titles of the first 25 projects.
+                    you must gather the project-list in chunks (page by page). use the "next page" and "previous page"
+                    links to scroll through the results.
                 </p><p>
                     this is a very powerful API. this simple example demonstrates only a basic usage scenario. consult
                     the API-documentation to read about additional functionality the API provides.
@@ -30,22 +31,50 @@
                         ? filter_var($_REQUEST['start'], FILTER_VALIDATE_INT)
                         : null;
 
+                    /*
+                     * if you page through the results you must make sure, that you provide
+                     * exactly the same input-parameters with all requests (except the 'start'-
+                     * and 'limit'-parameters which may of course differ). otherwise the returned
+                     * results are invalid.
+                     *
+                     * to help you ensure that the API sends a 'X-Paginator-Hash'-header with
+                     * every response you get. if send this header back with the request to
+                     * gather the next page of results the API ensures that your input-parameters
+                     * did not change. that makes the results way more reliable and is therefor
+                     * strongly recommended.
+                     */
                     echo new ApiResultRenderer()->getProjectsFromApiAndRenderResults(
                         [
                             'limit' => 25,
                             'start' => $start,
                             'expand' => 'language,project_images'
                         ],
+                        $_REQUEST['hash']
+                            ? ['headers' => ['X-Paginator-Hash' => $_REQUEST['hash']]]
+                            : [],
                         function() {
                             $stats = $this->client->getLastResponseStatistics();
 
                             if (!array_key_exists('has-next-page', $stats))
                             {
-                                return '<p>This request was not paginated.</p>';
-                            } elseif ($stats['has-next-page']) {
-                                return '<p><a href="?start=' . ($stats['start'] + $stats['limit']) . '">next page</a></p>';
-                            } else
-                                return '<p>This is the last page of the request.</p>';
+                                $result = 'This request was not paginated.';
+                            } else {
+                                $result =
+                                        '<span>showing datasets '
+                                        . ($stats['start'] + 1)
+                                        . ' - '
+                                        . ($stats['start'] + $stats['count'])
+                                        . " (of {$stats['total']})</span>";
+
+                                if ($stats['has-previous-page'])
+                                    $result =
+                                            '<span style="padding-right: 20px;"><a href="?' . http_build_query(['start' => $stats['start'] - $stats['count'], 'hash' => $stats['hash']]) . '">previous page</a></span>'
+                                            . $result;
+                                if ($stats['has-next-page'])
+                                    $result .= '<span style="padding-left: 20px;"><a href="?' . http_build_query(['start' => $stats['start'] + $stats['count'], 'hash' => $stats['hash']]) . '">next page</a></span>';
+                            }
+
+                            return "<p class='paginator'>{$result}</p>";
                         }
                     );
 

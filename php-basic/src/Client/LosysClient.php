@@ -304,10 +304,15 @@ class LosysClient
      */
     public function getLastResponseStatistics(): array
     {
-        $hasPaginationInfo =
-            !is_null($start = $this->getLastResponseHeader('X-Paginator-Start'))
-            && !is_null($limit = $this->getLastResponseHeader('X-Paginator-Limit'))
-            && !is_null($total = $this->getLastResponseHeader('X-Paginator-Total'));
+        $paginatorInfo = array_filter(
+            $this->last_response_headers ?? [],
+            fn($value, $name) => str_starts_with(strtolower($name), 'x-paginator-'),
+            ARRAY_FILTER_USE_BOTH
+        );
+        $paginatorInfo = array_combine(
+            array_map(fn($name) => substr($name, strlen('x-paginator-')), array_keys($paginatorInfo)),
+            array_map(fn($value) => implode('', $value), $paginatorInfo)
+        );
 
         return array_merge(
             [
@@ -315,15 +320,7 @@ class LosysClient
                 'response-size' => is_null($this->last_size_bytes) ? null : number_format($this->last_size_bytes / 1024, 1, '.', '\'') . ' kB',
                 'request-id'    => $this->getLastResponseHeader('X-Request-Id'),
             ],
-            $hasPaginationInfo
-                ? [
-                    'start'             => $start,
-                    'limit'             => $limit,
-                    'total'             => $total,
-                    'has-next-page'     => $this->getLastResponseHeader('X-Paginator-Has-Next-Page'),
-                    'has-previous-page' => $this->getLastResponseHeader('X-Paginator-Has-Previous-Page'),
-                  ]
-                : []
+            $paginatorInfo
         );
     }
 }

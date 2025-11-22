@@ -16,12 +16,17 @@ class ApiResultRenderer
         get => $this->_client ??= new LosysClient();
     }
 
-    public function getProjectsFromApiAndRenderResults(array  $parameters = [],
+    public function getProjectsFromApiAndRenderResults(array    $parameters = [],
+                                                       array    $guzzleRequestOptions = [],
                                                        ?Closure $afterResultTableClosure = null): string
     {
         try
         {
-            $data = $this->client->callApi('api/customer/project', $parameters);
+            $data = $this->client->callApi(
+                'api/customer/project',
+                $parameters,
+                guzzleRequestOptions: $guzzleRequestOptions
+            );
 
             // show the input-parameters
             $result = '<h3>This is the API-request we send</h3>'

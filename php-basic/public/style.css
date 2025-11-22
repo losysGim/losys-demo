@@ -12,3 +12,4 @@ label { padding-right: 10px; }
 .full_width { width: 100%; }
 .grow { flex: 1 1 100%; overflow: scroll; }
 pre { width: 95%; max-height: 1000px; overflow-y: scroll; overflow-x: scroll; border: 1px solid gray; }
+.paginator { width: 95%; padding: 5px; background-color: rgb(235, 235, 235); border: 1px solid gray; }

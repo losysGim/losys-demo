@@ -18,7 +18,7 @@
                     you gain full access to all data-fields using this method. the downside is you need to render
                     the project-listing yourself if you want to show it to the user.
                 </p><p>
-                    at this page we only show a list of the project-titles of the first 10 projects.
+                    at this page we only show a list of the project-titles of the first 25 projects.
                 </p><p>
                     this is a very powerful API. this simple example demonstrates only a basic usage scenario. consult
                     the API-documentation to read about additional functionality the API provides.
@@ -38,11 +38,14 @@
                         ],
                         function() {
                             $stats = $this->client->getLastResponseStatistics();
-                            if ($stats['has-next-page'])
+
+                            if (!array_key_exists('has-next-page', $stats))
                             {
+                                return '<p>This request was not paginated.</p>';
+                            } elseif ($stats['has-next-page']) {
                                 return '<p><a href="?start=' . ($stats['start'] + $stats['limit']) . '">next page</a></p>';
                             } else
-                                return '<p>This request was not paginated.</p>';
+                                return '<p>This is the last page of the request.</p>';
                         }
                     );
 

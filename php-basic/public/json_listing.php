@@ -49,8 +49,8 @@
                             'start' => $start,
                             'expand' => 'language,project_images'
                         ],
-                        $_REQUEST['hash']
-                            ? ['headers' => ['X-Paginator-Hash' => $_REQUEST['hash']]]
+                        array_key_exists('hash', $_REQUEST) && ($hash = $_REQUEST['hash'])
+                            ? ['headers' => ['X-Paginator-Hash' => $hash]]
                             : [],
                         function() {
                             $stats = $this->client->getLastResponseStatistics();

@@ -45,7 +45,11 @@
                      */
                     echo new ApiResultRenderer()->getProjectsFromApiAndRenderResults(
                         [
-                            'limit' => 25,
+                            'limit' => 25,      /*
+                                                 * if you retrieve multiple pages of the same resultset you should
+                                                 * never change the 'limit'-parameter between the calls. that helps
+                                                 * the optimizer speedup the generation of your results.
+                                                 */
                             'start' => $start,
                             'expand' => 'language,project_images'
                         ],

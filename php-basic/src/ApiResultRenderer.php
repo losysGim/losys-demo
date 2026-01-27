@@ -66,10 +66,10 @@ class ApiResultRenderer
                 // show the received JSON
                 . '<h3>this is the raw-data the api really returned</h3>'
                 . '<pre>'
-                . json_encode(
+                . htmlentities(json_encode(
                     $data,
                     JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-                )
+                ))
                 . '</pre>'
 
                 . '<small>API request statistics: '

@@ -29,14 +29,16 @@ class Utils
         $filter_values =
             array_map(
                 fn($value) =>
-                is_array($value)
-                    ? self::array_flatten(
-                        array_merge(
-                            array_map(
-                                fn($item) => GuzzleUtils::jsonDecode($item ?: 'null', true),
-                                $value
-                            )))
-                        : GuzzleUtils::jsonDecode($value, true),
+                    is_array($value)
+                        ? self::array_flatten(
+                            array_merge(
+                                array_map(
+                                    fn($item) => GuzzleUtils::jsonDecode($item ?: 'null', true),
+                                    $value
+                                )
+                            )
+                          )
+                        : $value,
                 array_filter(
                     $uiFilterValues ?? $_REQUEST,
                     fn($value, $key) => str_starts_with($key, $prefix),
@@ -69,7 +71,11 @@ class Utils
 
             unset($filter_values[$key]);
         }
-        $filter_values['attributes'] = $attribute_filters;
+        if (empty($attribute_filters)) {
+            if (array_key_exists('attributes', $filter_values))
+                unset($filter_values['attributes']);
+        } else
+            $filter_values['attributes'] = $attribute_filters;
 
         return $filter_values;
     }

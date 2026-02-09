@@ -27,7 +27,7 @@
                          * if you wish you may already filter these "filter-multiple-choice-values" by the
                          * same criteria that are accepted to filter the project-listing, e.g. you may send
                          *     {companyId: [1, 2, 3]}
-                         * to show only the filter-values that existing in one of the companies 1, 2 or 3.
+                         * to show only the filter-values that exist in one of the companies 1, 2 or 3.
                          */
                         $filter = $renderer->client->callApi('/api/customer/project/filter_multiple_choice_values');
 
@@ -84,7 +84,27 @@
                             {
                                 $field = 'attributes_' . implode('_', $value['ids']);
 
-                                switch ($value['type']) {
+                                switch($value['type']) {
+                                    case 'employees':
+                                        echo
+                                            '<label for="' . $field . '">' . htmlentities($value['title']) . '</label>'
+                                            . '<select name="filter_' . $field . '[]" id="' . $field . '" multiple>'
+                                            . '<option value="">(all)</option>'
+                                            . implode('', array_map(
+                                                    fn(array $employee) => '<option value="' . htmlentities(json_encode($employee['id'])) . "\">{$employee['firstName']} {$employee['lastName']}</option>",
+                                                    $value['employees']
+                                            ))
+                                            . '</select><hr>';
+                                        break;
+
+                                    case 'text':
+                                    case 'textarea':
+                                        echo
+                                            '<label for="' . $field . '">' . htmlentities($value['title']) . '</label>'
+                                            . '<input type="text" name="filter_' . $field . '" id="' . $field . '">'
+                                            . '<hr>';
+                                        break;
+
                                     case 'bool':
                                         echo
                                             '<label for="' . $field . '">' . htmlentities($value['title']) . '</label>'
@@ -93,6 +113,7 @@
                                             . '<option value="' . htmlentities(json_encode('True')) . '">yes</option>'
                                             . '<option value="' . htmlentities(json_encode('False')) . '">no</option>'
                                             . '</select><hr>';
+                                        break;
                                     // other types not implemented in this demo
                                 }
                             }

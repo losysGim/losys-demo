@@ -34,6 +34,7 @@ class LosysClient
     private ?string               $locale = null;
 
     private const string          DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
+    public const string           DEFAULT_LOCALE = 'de';
 
     private array                 $additionalGuzzleOptions = [];
 
@@ -59,7 +60,7 @@ class LosysClient
      */
     protected function loadConfiguration(): void
     {
-        $env = Dotenv::createArrayBacked(dirname(dirname(dirname(__DIR__))));
+        $env = Dotenv::createArrayBacked(dirname(__DIR__, 3));
         $config = $env->load();
 
         $env->required(['LOSYS_INSTANCE', 'LOSYS_CLIENT_ID', 'LOSYS_CLIENT_SECRET'])->notEmpty();
@@ -109,7 +110,7 @@ class LosysClient
         }
 
         if (!$this->locale)
-            $this->locale = 'de';
+            $this->locale = self::DEFAULT_LOCALE;
 
         if (preg_match('/^[A-Za-z]{2}_[A-Za-z]{2}$/', $this->locale))
             $this->locale = str_replace('_', '-', $this->locale);
@@ -157,9 +158,9 @@ class LosysClient
      *                                        see https://docs.guzzlephp.org/en/stable/request-options.html
      *                                        example ['http_errors' => true]
      *
-     * @return string|array|ResponseInterface will return the body of the api's response.
-     *                                        if you set $guzzleRequestOptions = ['http_errors' => true]
-     *                                        and the api-call failed it will return the ResponseInterface
+     * @return string|int|array|ResponseInterface will return the body of the api's response.
+     *                                        if you set `$guzzleRequestOptions = ['http_errors' => true]`
+     *                                        and the api-call failed it will return the `ResponseInterface`
      *
      * @throws IdentityProviderException
      * @throws GuzzleException
@@ -168,7 +169,7 @@ class LosysClient
                             array  $data = [],
                             string $httpMethod = 'GET',
                             string $expectedContentType = 'application/json',
-                            array  $guzzleRequestOptions = [])
+                            array  $guzzleRequestOptions = []): string|int|array|ResponseInterface
     {
         if (!$this->client)
             $this->client = new Client([
@@ -285,7 +286,7 @@ class LosysClient
             && preg_match('%^application/json($|[+;])%i', $first[0]);
     }
 
-    public function getLastResponseHeader(string $header): mixed
+    public function getLastResponseHeader(string $header): ?string
     {
         if (is_null($this->last_response_headers)
             || !array_key_exists($key = strtolower($header), $this->last_response_headers))

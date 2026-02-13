@@ -77,7 +77,8 @@
                          *         ]
                          *     }
                          *
-                         * available types: 'textarea', 'text', 'bool' or 'employees'
+                         * available 'type's:
+                         * 'textarea', 'text', 'bool', 'dropdown', 'number' or 'employees'
                          */
                         if (array_key_exists('attributeByName', $filter))
                             foreach($filter['attributeByName'] as $value)
@@ -137,28 +138,136 @@
                          *      array of integers (IDs)
                          *
                          *    ...attributes
-                         *      [['id' => {ids}, 'value' => {values}], ['name' => {names}, 'value' => {values}], ...]
-                         *      {ids}    := int[]
-                         *      {names}  := string[]
-                         *      beware: either {ids} or {names} must be present, but never both.
+                         *      [
+                         *          [{selector}, {value_filter}],
+                         *          [{selector}, {value_filter}],
+                         *          [{selector}, {value_filter}],
+                         *          ...
+                         *      ]
                          *
-                         *      {values} := [{value}, {value}, ...]
-                         *      {value}  := either...
-                         *                  ...1 or 'test'
-                         *                  ...['from' => 4000, 'to' => 5000]
-                         *                  ...['from' => 4000]
-                         *                  ...['to' => 4000]
-                         *                  ...['like' => 'search text' ]
-                         *                  ...['contains' => 'search text']
-                         *      example:
+                         *      ...with...
+                         *
+                         *      {selector}           := defines on which Attributes the {value_filter} is applied.
+                         *                              ['id' => [123, 456, ...]]
+                         *                                  filters based on Attribute.id
+                         *                              or
+                         *                              ['name' => ['abc', 'def', ...]]
+                         *                                  filters based on the localized name of the Attribute.
+                         *                                  this selects all Attributes having the localized name
+                         *                                  in any(!) defined language matching the given text (using
+                         *                                  the Attributes defined in all companies that you have
+                         *                                  read-access to).
+                         *
+                         *                              either 'id' or 'name' must be present, but never both.
+                         *
+                         *      {value_filter}       := ['value' => {value_criterium}]
+                         *                                  selects projects based on the value that the selected
+                         *                                  Attributes are assigned in the searched projects.
+                         *                                  a {value_criterium} always implies ['assigned' => true]
+                         *                                  that is only matches projects that have any value assigned
+                         *                                  for the selected Attributes.
+                         *                              or
+                         *                              ['assigned' => {assigned_criterium}]
+                         *                                  selects projects that have the selected Attributes assigned
+                         *                                  (no matter which value is assigned).
+                         *                                  remember:
+                         *                                      projects never have "empty" Attribute-values assigned.
+                         *                                      if you set the value for an Attribute to empty in a
+                         *                                      project the attribute-assignment is removed from the
+                         *                                      project.
+                         *
+                         *                              either 'value' or 'assigned' must be present, but never both.
+                         *
+                         *      {assigned_criterium} := true | false
+                         *
+                         *      {value_criterium}    := usable criteria depend on the type of the attribute(s)
+                         *                              that are selected:
+                         *
+                         *                              criterium               applicable Attribute-types
+                         *                              {conjunction}           all
+                         *                              {equals}                all
+                         *                              {range}                 number
+                         *                              {text_filter}           text, textarea
+                         *
+                         *      {conjunction}        := ['and' => [{value_filter}, {value_filter}, ...]]
+                         *                              or
+                         *                              ['or' => [{value_filter}, {value_filter}, ...]]
+                         *                              or
+                         *                              ['not' => [{value_filter}]]
+                         *                              beware:
+                         *                                  {value_filter} may not be an 'assigned' criterium here
+                         *                                  (only 'value' is allowed).
+                         *
+                         *      {equals}             := [{value}, {value}, ...]
+                         *                              {value} may be integer, float, boolean or string
+                         *                              depending on the type of Attribute.
+                         *                              beware:
+                         *                                  for attribute.type='employees'
+                         *                                      {value} may only be
+                         *                                      integer   (matching the employee-id)
+                         *                                      or string (matching either 'firstName lastName'
+                         *                                                 or the 'email-address' if it contains a '@').
+                         *                                      if you query the Attributes see the field 'employees'
+                         *                                      for a list of available employees.
+                         *
+                         *                                  for attribute.type='dropdown'
+                         *                                      {value} may only be
+                         *                                      integer   (matching the value-id)
+                         *                                      or string (matching the dropdown-value in any(!) language).
+                         *                                      if you query the Attributes see the field 'selectable_values'
+                         *                                      for a list of available dropdown-values.
+                         *
+                         *                                  for attribute.type='number'
+                         *                                      {value} may be an integer, float or a string that is
+                         *                                      convertible to integer or float with '.' being the
+                         *                                      decimal-point (e.g. '123' or '123.56').
+                         *
+                         *                                  for attribute.type='bool'
+                         *                                      {value} may only be the string(!) 'True' or 'False'
+                         *
+                         *                                  for attribute.type='text' or 'textarea'
+                         *                                      {value} may only be the string that must exactly
+                         *                                      match the value assigned to the Attribute in the project.
+                         *
+                         *      {range}              := ['from' => {value}, 'to' => {value}]
+                         *                              or
+                         *                              ['from' => {value}]
+                         *                              or
+                         *                              ['to' => {value}]
+                         *
+                         *                              {value} may be an integer, float or a string that is
+                         *                              convertible to integer or float with '.' being the
+                         *                              decimal-point (e.g. '123' or '123.56').
+                         *                              if 'from' and 'to' are both provided and 'from' is bigger
+                         *                              than 'to' they are automatically swapped.
+                         *
+                         *      {text_filter}        := ['like' => [{value}, {value}, ...]]
+                         *                                  {value} must be a string.
+                         *                                  searches for assigned Attribute-values that match any of the
+                         *                                  given MySQL-SQL-LIKE pattern provided as {value}s.
+                         *                                  Allowed wildcards are '*' (matching 0..x characters) and
+                         *                                  '_' (matching exactly one character).
+                         *                                  see https://dev.mysql.com/doc/refman/8.4/en/pattern-matching.html
+                         *                              or
+                         *                              ['contains' => [{value}, {value}, ...]]
+                         *                                  {value} must be a string.
+                         *                                  searches for assigned Attribute-values that contain any
+                         *                                  of the given values. the search is performed case-insensitive
+                         *                                  (that is 'Hallo' matching 'hallo').
+                         *
+                         *      if {selector} or {value_filter} are not present, the filter is silently ignored.
+                         *
+                         *      examples:
                          *          [
-                         *              [ 'id' => [34, 36], 'value' => 1 ],
-                         *              [ 'id' => 40, 'value' => [1, 'test'] ],
-                         *              [ 'id' => [40], 'value' => ['from' => 4000, 'to' => 5000],
-                         *              [ 'name' => ['test'], 'value' => 'huhu' ]
+                         *              [ 'id' => [34, 36], 'value' => [1] ],
+                         *              [ 'id' => [40], 'value' => [1, 'test'] ],
+                         *              [ 'id' => [40], 'value' => ['from' => 4000, 'to' => 5000] ],
+                         *              [ 'name' => ['test'], 'value' => ['huhu'] ],
+                         *              [ 'id' => [40], 'value' => ['assigned' => true] ],
+                         *              [ 'id' => [40], 'value' => ['not' => ['value' => 'test'] ],
+                         *              [ 'name' => ['Projektleiter'], 'value' => ['hans@test.ch'] ],
                          *          ]
                          */
-
                         echo $renderer->getProjectsFromApiAndRenderResults(
                             array_merge(
                                 $filter_values,

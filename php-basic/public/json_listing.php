@@ -84,14 +84,15 @@
 
                     /*
                      * you may provide filter-parameters to query only selected projects. available parameters include
-                     * 'yearFrom', 'yearTo', 'projectIds', 'companyIds',  'groupIds', 'languages', 'categoryIds',
+                     * 'yearFrom', 'yearTo', 'projectIds', 'companyIds', 'groupIds', 'languages', 'categoryIds',
                      * 'cantons', 'status', 'visibility' or 'withImage'.
+                     * for an explanation of the 'attributes'-filter see filtered_listing.php.
                      *
                      * use 'searchText' and 'searchTextIn' (which may be either 'project', 'companies' or 'typeOfWork')
                      * for full-text-searches. Optionally use 'concatenation' as 'and' or 'or' here.
                      *
                      * to order the returned list use 'orderBy' which may be an array of 0..x of 'yearOfCompletion',
-                     * 'hasImage', 'id', 'zipcode', 'city', 'priority' and 'canton'.
+                     * 'hasImage', 'id', 'zipcode', 'city', 'priority', 'canton' and 'random'.
                      *
                      * hint:
                      *   you may use /api/customer/project/filter_multiple_choice_values to see a list of all available
@@ -112,9 +113,10 @@
                      *      'project_participating_companies',
                      *      'company',
                      *      'language',
+                     *      'access_rights',
                      * instead of these '*' returns all available related entities.
                      *
-                     * use 'limit' and 'offset' to control how many dataset starting at which offset will be returned.
+                     * use 'limit' and 'offset' to control how many datasets starting at which offset will be returned.
                      */
                     ?>
                 </div>

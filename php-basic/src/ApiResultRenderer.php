@@ -93,7 +93,7 @@ class ApiResultRenderer
         return match (get_class($e)) {
             // indicates the Losys API returned an error
             LosysBackendException::class =>
-                "<p class='error'>\"{$e->getErrorType()}\"-Error with Code #{$e->getErrorCode()} from Losys-API: {$e->getMessage()}<br>"
+                "<p class='error'><span class='head'>\"{$e->getErrorType()}\"-Error (Code #{$e->getErrorCode()})</span>{$e->getMessage()}<br>"
                 . implode(
                     '<br>',
                     array_combine(
@@ -107,14 +107,14 @@ class ApiResultRenderer
 
             // indicates there is a problem connecting to the server or a network-problem (e.g. no internet-access)
             GuzzleException::class =>
-                "<p class='error'>Network-/Transmission-Error: {$e->getMessage()}</p>",
+                "<p class='error'><span class='head'>Network-/Transmission-Error</span>{$e->getMessage()}</p>",
 
             // indicates there is an error authenticating against the Losys API
             IdentityProviderException::class =>
-                "<p class='error'>You could not be authenticated (check LOSYS_CLIENT_ID and LOSYS_CLIENT_SECRET in your .env-file): {$e->getMessage()}</p>",
+                "<p class='error'><span class='head'>Authentication failed</span>You could not be authenticated (check LOSYS_CLIENT_ID and LOSYS_CLIENT_SECRET in your .env-file): {$e->getMessage()}</p>",
 
             default =>
-                '<p class="error">Error "' . get_class($e) . "\": {$e->getMessage()}</p>",
+                '<p class="error"><span class="head">Error "' . get_class($e) . "\"</span>{$e->getMessage()}</p>",
         };
     }
 }

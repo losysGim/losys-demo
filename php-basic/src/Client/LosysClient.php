@@ -10,44 +10,71 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Header;
 use GuzzleHttp\Utils as GuzzleUtils;
 use IntlException;
+use InvalidArgumentException;
 use JsonException;
+use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Losys\Demo\Utils;
 use Psr\Http\Message\ResponseInterface;
 
+/**
+ * this class encapsulates a client to access the Losys API
+ *
+ * it manages...
+ * ...authentication
+ * ...providing the correct locales
+ * ...makes handling of failed requests/error-responses easier
+ * ...gathers statistics about every request
+ * ...supports you in paging requests
+ *
+ * feel free to adopt this class to your needs and reuse it
+ * in your own projects.
+ *
+ * you can configure it via an `.env`-file that you must provide
+ * in the root folder of this project. create it by copying the
+ * provided `.env.example`, edit it, and fill in your personal
+ * credentials that you received from support@losys.ch
+ */
 class LosysClient
 {
     /*
      * settings red from the .env file
      */
-    private string                $losys_instance_uri;
-    private string                $losys_client_id;
-    private string                $losys_client_secret;
+    private string                  $losys_instance_uri;
+    private string                  $losys_client_id;
+    private ?string                 $losys_client_secret;
+    private ?string                 $losys_client_app;
 
     /*
      * variables acting as cache to store generated values
      */
-    private ?AccessTokenInterface $access_token = null;
+    private ?AccessTokenInterface   $access_token = null;
 
-    private ?Client               $client = null;
-    private ?string               $locale = null;
+    private ?Client                 $client = null;
+    private ?string                 $locale = null;
 
-    private const string          DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
-    public const string           DEFAULT_LOCALE = 'de';
+    private const string            DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
+    public const string             DEFAULT_LOCALE = 'de';
 
-    private array                 $additionalGuzzleOptions = [];
+    private array                   $additionalGuzzleOptions = [];
 
-    private ?float                $last_request_start = null;
-    private ?float                $last_duration_seconds = null;
-    private ?int                  $last_size_bytes = null;
-    private ?array                $last_response_headers = null;
-    private ?array                $last_request_info = null;
-    private ?array                $last_request_info_filtered = null;
+    private ?float                  $last_request_start = null;
+    private ?float                  $last_duration_seconds = null;
+    private ?int                    $last_size_bytes = null;
+    private ?array                  $last_response_headers = null;
+    private ?array                  $last_request_info = null;
+    private ?array                  $last_request_info_filtered = null;
+
+    private SessionHandlerInterface $session;
+
+    private ?string                 $auto_code_code = null;
+    private ?string                 $auto_code_state = null;
 
 
     public function __construct()
     {
+        $this->session = new SessionHandler();
         $this->loadConfiguration();
     }
 
@@ -63,14 +90,25 @@ class LosysClient
         $env = Dotenv::createArrayBacked(dirname(__DIR__, 3));
         $config = $env->load();
 
-        $env->required(['LOSYS_INSTANCE', 'LOSYS_CLIENT_ID', 'LOSYS_CLIENT_SECRET'])->notEmpty();
+        $env->required(['LOSYS_INSTANCE', 'LOSYS_CLIENT_ID'])->notEmpty();
 
         $this->losys_instance_uri  = $config['LOSYS_INSTANCE'];
         $this->losys_client_id     = $config['LOSYS_CLIENT_ID'];
-        $this->losys_client_secret = $config['LOSYS_CLIENT_SECRET'];
+        $this->losys_client_secret = ($config['LOSYS_CLIENT_SECRET'] ?? null) ?: null;
+        $this->losys_client_app    = ($config['LOSYS_CLIENT_APP'] ?? null) ?: null;
+
+        if ((empty($this->losys_client_secret) && empty($this->losys_client_app))
+            || (!empty($this->losys_client_secret) && !empty($this->losys_client_app)))
+            throw new JsonException(
+                'you must either configure "LOSYS_CLIENT_SECRET" (to use the "Client Credentials Flow") or "LOSYS_CLIENT_APP" (to use the "Authorization Code Flow") - but neither both nor none of them.'
+            );
 
         if (!str_ends_with($this->losys_instance_uri, '/'))
             $this->losys_instance_uri .= '/';
+
+        if ($this->losys_client_app
+            && !str_ends_with($this->losys_client_app, '/'))
+            $this->losys_client_app .= '/';
 
         if (array_key_exists('GUZZLE_OPTIONS', $config)
             && !empty($opt = $config['GUZZLE_OPTIONS']))
@@ -118,27 +156,112 @@ class LosysClient
         return $this->locale;
     }
 
+    public function useAuthorizationCodeFlow(): bool
+    {
+        return !empty($this->losys_client_app);
+    }
+
+    private function getProvider(): LosysProvider
+    {
+        return new LosysProvider(array_merge(
+            $this->useAuthorizationCodeFlow()
+                ? [
+                'clientId'                => $this->losys_client_id,
+                'redirectUri'             => $this->losys_client_app . 'ac_pkce.php',
+                'urlAccessToken'          => $this->losys_instance_uri . 'oauth/token',
+                'urlAuthorize'            => $this->losys_instance_uri . 'oauth/authorize',
+                'urlResourceOwnerDetails' => '',
+                'pkceMethod'              => AbstractProvider::PKCE_METHOD_S256,
+            ]
+                : [
+                'clientId'                => $this->losys_client_id,
+                'clientSecret'            => $this->losys_client_secret,
+                'urlAccessToken'          => $this->losys_instance_uri . 'oauth/token',
+                'urlAuthorize'            => '',
+                'urlResourceOwnerDetails' => '',
+            ],
+            $this->additionalGuzzleOptions
+        ));
+    }
+
+    /**
+     * @param string|null $code
+     * @param string|null $state
+     * @return void
+     *
+     * @throws AuthorizationFailedException
+     * @throws GuzzleException
+     * @throws IdentityProviderException
+     * @throws RedirectException
+     */
+    public function setAuthorizationCodeFlowState(?string $code,
+                                                  ?string $state): void
+    {
+        if (!$this->useAuthorizationCodeFlow())
+            throw new InvalidArgumentException('not configured for Authorization Code Flow. set LOSYS_CLIENT_APP in your .env file.');
+
+        $this->auto_code_code = $code;
+        $this->auto_code_state = $state;
+
+        $this->getAccessToken();
+    }
+
+    /**
+     * @return AccessTokenInterface
+     *
+     * @throws GuzzleException
+     * @throws IdentityProviderException
+     * @throws AuthorizationFailedException
+     * @throws RedirectException
+     */
+    private function gatherAccessToken(): AccessTokenInterface
+    {
+        $provider = $this->getProvider();
+
+        if ($this->useAuthorizationCodeFlow()) {
+            if (empty($this->auto_code_code)) {
+                // phase 1: start the authorization flow
+                $authorizationUrl = $provider->getAuthorizationUrl();
+                $this->session->set(SessionVariableEnum::State, $provider->getState());
+                $this->session->set(SessionVariableEnum::PkceCodeVerifier, $provider->getPkceCode());
+                throw new RedirectException($authorizationUrl);
+
+            } elseif (empty($this->auto_code_state)
+                      || empty($state = $this->session->get(SessionVariableEnum::State))
+                      || ($state !== $this->auto_code_state)) {
+                // phase 2: error / CSRF-attack
+                $this->session->clear();
+                throw new AuthorizationFailedException();
+            } else {
+                // phase 2: get the authorization code
+                try {
+                    $provider->setPkceCode($this->session->get(SessionVariableEnum::PkceCodeVerifier));
+
+                    // Try to get an access token using the authorization code grant.
+                    return $provider->getAccessToken('authorization_code', [
+                        'code' => $this->auto_code_code
+                    ]);
+                } finally {
+                    $this->session->clear();
+                }
+            }
+        } else
+            return $provider->getAccessToken('client_credentials');
+    }
+
     /**
      * logs in to the Losys-platform and returns the acquired token.
      *
      * @return AccessTokenInterface
      *
-     * @throws IdentityProviderException|GuzzleException
+     * @throws IdentityProviderException
+     * @throws GuzzleException
+     * @throws AuthorizationFailedException
+     * @throws RedirectException
      */
     protected function getAccessToken(): AccessTokenInterface
     {
-        if ($this->access_token)
-            return $this->access_token;
-
-        $client = new LosysProvider(array_merge([
-            'clientId'                => $this->losys_client_id,
-            'clientSecret'            => $this->losys_client_secret,
-            'urlAccessToken'          => $this->losys_instance_uri . 'oauth/token',
-            'urlAuthorize'            => '',
-            'urlResourceOwnerDetails' => ''
-        ], $this->additionalGuzzleOptions));
-
-        return $this->access_token = $client->getAccessToken('client_credentials');
+        return $this->access_token ??= $this->gatherAccessToken();
     }
 
     /**

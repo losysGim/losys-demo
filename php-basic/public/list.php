@@ -1,12 +1,14 @@
 <?php use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/../vendor/autoload.php'; require __DIR__ . '/../src/base.php'; ?>
 <html lang="en">
-<title>Demo Website</title>
-<link rel="stylesheet" href="style.css">
-<style>
-    .projects .card-title { color: red; }
-    .card-view { border: 5px solid blue; margin-bottom: 25px; }
-    .card-view .indicators { display: none; }
-</style>
+<head>
+    <title>Demo Website</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .projects .card-title { color: red; }
+        .card-view { border: 5px solid blue; margin-bottom: 25px; }
+        .card-view .indicators { display: none; }
+    </style>
+</head>
 <body>
 <div class="content">
     <div class="menu"><?php echo (new Menu())->render(); ?></div>

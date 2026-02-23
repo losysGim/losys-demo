@@ -1,7 +1,7 @@
 {
     "name": "losys/losys-demo",
     "type": "project",
-    "description": "demonstrating the use of the www.losys.ch customer API",
+    "description": "demonstrating the use of the www.referenz-verwaltung.ch customer API",
     "keywords": ["losys"],
     "license": "MIT",
     "require": {

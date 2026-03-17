@@ -42,10 +42,7 @@ use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/.
                      * additionally you can input PDF_generation parameters:
                      * 'orientation'   can be 'portrait' or 'landscape'
                      * 'printlayout'   can be 'datasheet' or 'datalist'
-                     *                 or the name of a company-template
-                     *                 hint:
-                     *                   use /api/v1/company/{companyId}/pdf_templates
-                     *                   to get a list of your custom company-templates
+                     *                 or the name of a company-template (see below)
                      * 'mode'          can be 'intern' or 'extern'
                      * 'companycover'  can be the company-ID if you want the
                      *                 PDF to be prefixed with a company-cover-sheet
@@ -58,7 +55,22 @@ use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/.
                     $client = new LosysClient();
 
                     try {
-                        $data = $client->callApi('api/customer/project/pdf/async', ['filter_limit' => 10, 'printlayout' => 'datasheet']);
+                        /*
+                         * gather all available pdf-templates
+                         * these can be used as 'printlayout' parameter in calls e.g.
+                         * to api/customer/project/pdf/async
+                         *
+                         * if you have access to a company-group you may also use
+                         * api/customer/company/{companyId}/pdf_templates to gather the
+                         * templates available to a specific company
+                         *
+                         * $available_templates = $client->callApi('api/customer/project/pdf/templates');
+                         * $printlayout = $available_templates[0]['id'];
+                         */
+                        $data = $client->callApi('api/customer/project/pdf/async', [
+                                'filter_limit' => 10,
+                                'printlayout' => $printlayout ?? 'datasheet'
+                        ]);
 
                         $message =
                             is_array($data)

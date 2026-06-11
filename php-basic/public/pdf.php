@@ -31,6 +31,9 @@ use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/.
                     /*
                      * this starts a new PDF-generation
                      *
+                     * the complete parameter-reference for this endpoint is documented at
+                     * https://api-doc.referenz-verwaltung.ch/ (endpoint "Start PDF generation").
+                     *
                      * you can use the same filter-attributes as in json_listing.php here.
                      * just prefix all field-names with 'filter_', e.g.
                      * 'filter_yearFrom' => 2020
@@ -44,6 +47,8 @@ use Losys\CustomerApi\Client\LosysClient, Losys\Demo\Menu; require __DIR__ . '/.
                      * 'printlayout'   can be 'datasheet' or 'datalist'
                      *                 or the name of a company-template (see below)
                      * 'mode'          can be 'intern' or 'extern'
+                     * 'quality'       can be 'regular' or 'low'
+                     * 'displayLocale' the language the PDF is rendered in (e.g. 'de', 'fr', 'it', 'en')
                      * 'companycover'  can be the company-ID if you want the
                      *                 PDF to be prefixed with a company-cover-sheet
                      * 'usercover'     can be an employee-ID if you want the

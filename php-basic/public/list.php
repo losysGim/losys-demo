@@ -48,6 +48,9 @@
              * if you provide 'searchText' you must additionally
              * provide 'searchTextIn' (with one or more of 'project',
              * 'companies' or 'typeOfWork').
+             *
+             * the full list of parameters and accepted values is
+             * documented at https://api-doc.referenz-verwaltung.ch/
              */
             ?>
         </div>

@@ -31,6 +31,9 @@ use Psr\Http\Message\ResponseInterface;
  * feel free to adopt this class to your needs and reuse it
  * in your own projects.
  *
+ * the full Customer API reference (endpoints, parameters, response formats)
+ * is documented at https://api-doc.referenz-verwaltung.ch/
+ *
  * you can configure it via an `.env`-file that you must provide
  * in the root folder of this project. create it by copying the
  * provided `.env.example`, edit it, and fill in your personal
@@ -266,6 +269,12 @@ class LosysClient
 
     /**
      * calls the Losys API and returns the resulting answer
+     *
+     * the complete reference of the Customer API — every callable endpoint, its
+     * parameters and the response format — is documented at
+     * https://api-doc.referenz-verwaltung.ch/
+     * use that documentation to look up which `$uri`, `$data` and
+     * `$httpMethod` a given API-method expects.
      *
      * @param string $uri                     relative uri of the api-method to call.
      *                                        should normally not start with a '/'.

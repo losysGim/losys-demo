@@ -26,6 +26,10 @@
                      * this call gets all available values the user may use to filter project-listing.
                      * you may use the result to build a multiple-choice filter-ui.
                      *
+                     * note: only values that are actually used by projects you have access to are
+                     * returned (not every value defined in the system). the response-format is
+                     * documented at https://api-doc.referenz-verwaltung.ch/ ("Available filter values").
+                     *
                      * if you wish you may already filter these "filter-multiple-choice-values" by the
                      * same criteria that are accepted to filter the project-listing, e.g. you may send
                      *     {companyId: [1, 2, 3]}
@@ -131,6 +135,11 @@
                     /*
                      * this is just an excerpt of the available filter-values. more are available.
                      * the existence of some may depend on your tenant-configuration.
+                     *
+                     * the complete reference of all filter-parameters (including the 'attributes'-
+                     * filter detailed below) is documented at
+                     * https://api-doc.referenz-verwaltung.ch/ — see the endpoints "List projects"
+                     * and "Available filter values".
                      *
                      * valid filter values for...
                      *    ...typeOfConstructionIds

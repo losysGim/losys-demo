@@ -3,6 +3,11 @@
 this project demonstrates how you can use the Losys Customer API to integrate your
 project-data at Losys into your company website using PHP.
 
+the complete Customer API reference (all endpoints, parameters and response
+formats) is available at
+**[api-doc.referenz-verwaltung.ch](https://api-doc.referenz-verwaltung.ch/)** —
+read it alongside the code in this demo.
+
 ## Requirements
 
 - PHP 8.5 (should also work with version 8.1 or 8.4) with the extensions `ext-json` and `ext-intl`

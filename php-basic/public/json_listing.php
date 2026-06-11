@@ -24,7 +24,9 @@
                 links to scroll through the results.
             </p><p>
                 this is a very powerful API. this simple example demonstrates only a basic usage scenario. consult
-                the API-documentation to read about additional functionality the API provides.
+                the API-documentation at
+                <a href="https://api-doc.referenz-verwaltung.ch/">api-doc.referenz-verwaltung.ch</a>
+                to read about additional functionality the API provides.
             </p>
 
             <div class="content_col grow">
@@ -85,6 +87,10 @@
                 );
 
                 /*
+                 * the full list of query-parameters, their accepted values and the response-format is
+                 * documented at https://api-doc.referenz-verwaltung.ch/ (endpoint "List projects").
+                 * the most important ones are summarized here:
+                 *
                  * you may provide filter-parameters to query only selected projects. available parameters include
                  * 'yearFrom', 'yearTo', 'projectIds', 'companyIds', 'groupIds', 'languages', 'categoryIds',
                  * 'cantons', 'status', 'visibility' or 'withImage'.

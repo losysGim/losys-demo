@@ -8,14 +8,19 @@ $error_head = $error_body = null;
      * this page demonstrates the use of the Authorization Code Flow
      *
      * beware:
-     *   this flow is not available for end-customer-tokens
+     *   this flow is not available for client-credentials customer-tokens.
+     *   it requires a "Portal"-type public client (no client_secret, PKCE),
+     *   created on the Losys side via `php artisan create:portalClient`.
      *
      * for this to work...
      * ...these must be the very first lines in this .PHP file
      *    (not a single character before the opening tag of this block!)
      * ...you must not set LOSYS_CLIENT_SECRET in your .env file
-     * ...you must set LOSYS_CLIENT_APP in your .env file to the URI of this instance
-     * ...this instance must be reachable via HTTP from the Losys-backend
+     * ...you must set LOSYS_CLIENT_APP in your .env file to the base URI of
+     *    this demo (the redirect target `<LOSYS_CLIENT_APP>ac_pkce.php` must be
+     *    registered as a redirect_uri on your Portal client).
+     * ...the redirect happens in the END-USER's browser (PKCE) — the Losys
+     *    backend does NOT need to reach this page server-to-server.
      */
     try {
         $client = new LosysClient();
@@ -42,8 +47,11 @@ $error_head = $error_body = null;
         header("Location: {$e->redirectToUri}");
         die();
     } catch(Throwable $e) {
-        $error_head = 'Error ' . get_class($e);
-        $error_body = $e->getMessage();
+        // escape: the message may contain attacker-influenced data (e.g. an
+        // OAuth `error_description` reflected from the query) and is echoed
+        // into the HTML below.
+        $error_head = htmlspecialchars('Error ' . get_class($e), ENT_QUOTES, 'UTF-8');
+        $error_body = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
     }
 ?>
 <html lang="en">
@@ -53,7 +61,7 @@ $error_head = $error_body = null;
 </head>
 <body>
     <div class="content">
-        <div class="menu"><?php echo new Menu()->render(); ?></div>
+        <div class="menu"><?php echo (new Menu())->render(); ?></div>
 
         <div>
             <h1>Authorization Code Flow example</h1>

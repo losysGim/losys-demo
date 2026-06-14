@@ -15,6 +15,7 @@ use JsonException;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessTokenInterface;
+use League\OAuth2\Client\Token\SettableRefreshTokenInterface;
 use Losys\Demo\Utils;
 use Psr\Http\Message\ResponseInterface;
 
@@ -54,11 +55,30 @@ class LosysClient
      */
     private ?AccessTokenInterface   $access_token = null;
 
+    /*
+     * persists the token across requests/CLI-runs so we reuse it until it
+     * expires instead of requesting a new one on every run.
+     */
+    private TokenStoreInterface     $token_store;
+
+    /*
+     * refresh the token this many seconds BEFORE it actually expires, so we
+     * never start a request with a token that lapses mid-flight.
+     */
+    private const int               TOKEN_EXPIRY_MARGIN_SECONDS = 60;
+
     private ?Client                 $client = null;
     private ?string                 $locale = null;
 
     private const string            DEFAULT_ACCEPT_HTML = 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7';
     public const string             DEFAULT_LOCALE = 'de';
+
+    /*
+     * scope requested in the Authorization Code Flow. the Losys backend only
+     * issues a portal-token (and only accepts the portal-login endpoint) for a
+     * "Portal"-type public client carrying this scope.
+     */
+    private const string            AUTH_CODE_SCOPE = 'portal';
 
     private array                   $additionalGuzzleOptions = [];
 
@@ -77,7 +97,8 @@ class LosysClient
 
     public function __construct()
     {
-        $this->session = new SessionHandler();
+        $this->session     = new SessionHandler();
+        $this->token_store = new FileTokenStore();
         $this->loadConfiguration();
     }
 
@@ -172,7 +193,11 @@ class LosysClient
                 'clientId'                => $this->losys_client_id,
                 'redirectUri'             => $this->losys_client_app . 'ac_pkce.php',
                 'urlAccessToken'          => $this->losys_instance_uri . 'oauth/token',
-                'urlAuthorize'            => $this->losys_instance_uri . 'oauth/authorize',
+                // external Authorization-Code+PKCE clients log in via the
+                // dedicated portal endpoint (NOT the generic Passport
+                // `oauth/authorize` consent route, which is for first-party
+                // session-based clients only).
+                'urlAuthorize'            => $this->losys_instance_uri . 'oauth/portal/authorize',
                 'urlResourceOwnerDetails' => '',
                 'pkceMethod'              => AbstractProvider::PKCE_METHOD_S256,
             ]
@@ -210,6 +235,12 @@ class LosysClient
     }
 
     /**
+     * acquires a fresh token from the auth-server.
+     *
+     * @param AccessTokenInterface|null $previous  the (expired) token we are
+     *                                             replacing, if any. used to
+     *                                             refresh via its refresh_token.
+     *
      * @return AccessTokenInterface
      *
      * @throws GuzzleException
@@ -217,14 +248,36 @@ class LosysClient
      * @throws AuthorizationFailedException
      * @throws RedirectException
      */
-    private function gatherAccessToken(): AccessTokenInterface
+    private function acquireAccessToken(?AccessTokenInterface $previous = null): AccessTokenInterface
     {
         $provider = $this->getProvider();
 
         if ($this->useAuthorizationCodeFlow()) {
+            // the Authorization Code Flow DOES yield a refresh_token (valid for
+            // ~90 days). prefer refreshing an expired token over forcing the
+            // user through a full interactive re-login.
+            if ($previous && $previous->getRefreshToken()) {
+                try {
+                    $refreshed = $provider->getAccessToken('refresh_token', [
+                        'refresh_token' => $previous->getRefreshToken(),
+                    ]);
+
+                    // some servers do not return a new refresh_token on refresh.
+                    // keep the previous one so we can refresh again next time.
+                    if (empty($refreshed->getRefreshToken())
+                        && $refreshed instanceof SettableRefreshTokenInterface)
+                        $refreshed->setRefreshToken($previous->getRefreshToken());
+
+                    return $refreshed;
+                } catch (IdentityProviderException) {
+                    // the refresh_token itself expired/was revoked (e.g. after
+                    // 90 days): fall through to a full authorization-code login.
+                }
+            }
+
             if (empty($this->auto_code_code)) {
                 // phase 1: start the authorization flow
-                $authorizationUrl = $provider->getAuthorizationUrl();
+                $authorizationUrl = $provider->getAuthorizationUrl(['scope' => self::AUTH_CODE_SCOPE]);
                 $this->session->set(SessionVariableEnum::State, $provider->getState());
                 $this->session->set(SessionVariableEnum::PkceCodeVerifier, $provider->getPkceCode());
                 throw new RedirectException($authorizationUrl);
@@ -248,12 +301,20 @@ class LosysClient
                     $this->session->clear();
                 }
             }
-        } else
-            return $provider->getAccessToken('client_credentials');
+        }
+
+        // the Client Credentials Flow yields NO refresh_token (RFC 6749 §4.4.3):
+        // "refreshing" is simply requesting a new token with the client_id/secret.
+        return $provider->getAccessToken('client_credentials');
     }
 
     /**
-     * logs in to the Losys-platform and returns the acquired token.
+     * logs in to the Losys-platform and returns a valid token.
+     *
+     * the token is reused across requests / CLI-runs: it is cached in-memory,
+     * persisted to disk (see {@see TokenStoreInterface}) and only re-issued
+     * when it is about to expire (or after a 401, see {@see invalidateAccessToken()}).
+     * this avoids triggering a brand-new token-issuance on every single run.
      *
      * @return AccessTokenInterface
      *
@@ -264,7 +325,63 @@ class LosysClient
      */
     protected function getAccessToken(): AccessTokenInterface
     {
-        return $this->access_token ??= $this->gatherAccessToken();
+        // 1. in-memory cache (valid within the safety margin)
+        if ($this->access_token && !$this->isExpiring($this->access_token))
+            return $this->access_token;
+
+        // 2. persistent store: reuse a token issued by a previous request/run
+        if (!$this->access_token)
+            $this->access_token = $this->token_store->load($this->tokenStoreKey());
+
+        if ($this->access_token && !$this->isExpiring($this->access_token))
+            return $this->access_token;
+
+        // 3. expired (or none at all): acquire a fresh one and persist it.
+        //    pass the expired token along so the Authorization Code Flow can
+        //    refresh it instead of starting a full new login.
+        $this->access_token = $this->acquireAccessToken($this->access_token);
+        $this->token_store->save($this->tokenStoreKey(), $this->access_token);
+
+        return $this->access_token;
+    }
+
+    /**
+     * is the token expired, or about to expire within the safety margin?
+     *
+     * tokens without expiry-information are treated as non-expiring.
+     */
+    private function isExpiring(AccessTokenInterface $token): bool
+    {
+        $expires = $token->getExpires();
+
+        if (empty($expires))
+            return false;
+
+        return $expires <= (time() + self::TOKEN_EXPIRY_MARGIN_SECONDS);
+    }
+
+    /**
+     * drops the current token from both the in-memory cache and the persistent
+     * store, e.g. after the server rejected it with a 401. the next call to
+     * {@see getAccessToken()} will acquire a fresh one.
+     */
+    private function invalidateAccessToken(): void
+    {
+        $this->access_token = null;
+        $this->token_store->clear($this->tokenStoreKey());
+    }
+
+    /**
+     * key under which the token is stored. scoped by flow + instance +
+     * client-id so different configurations/instances never share a token.
+     */
+    private function tokenStoreKey(): string
+    {
+        return implode('|', [
+            $this->useAuthorizationCodeFlow() ? 'authorization_code' : 'client_credentials',
+            $this->losys_instance_uri,
+            $this->losys_client_id,
+        ]);
     }
 
     /**
@@ -289,6 +406,8 @@ class LosysClient
      * @param array  $guzzleRequestOptions    additional options for the guzzle http-client
      *                                        see https://docs.guzzlephp.org/en/stable/request-options.html
      *                                        example ['http_errors' => true]
+     * @param bool   $retrying               internal flag: true while retrying after a 401.
+     *                                        prevents an endless retry-loop. do not set it yourself.
      *
      * @return string|int|array|ResponseInterface will return the body of the api's response.
      *                                        if you set `$guzzleRequestOptions = ['http_errors' => true]`
@@ -301,7 +420,8 @@ class LosysClient
                             array  $data = [],
                             string $httpMethod = 'GET',
                             string $expectedContentType = 'application/json',
-                            array  $guzzleRequestOptions = []): string|int|array|ResponseInterface
+                            array  $guzzleRequestOptions = [],
+                            bool   $retrying = false): string|int|array|ResponseInterface
     {
         if (!$this->client)
             $this->client = new Client([
@@ -347,6 +467,17 @@ class LosysClient
             $this->setLastResponseStatistics($response);
         } catch (RequestException $e) {
             $this->setLastResponseStatistics($response = $e->getResponse());
+
+            // the server rejected our token (expired/revoked server-side).
+            // drop it from cache + store and retry exactly once with a fresh
+            // token. the $retrying guard prevents an endless loop.
+            if (!$retrying
+                && $response
+                && $response->getStatusCode() === 401)
+            {
+                $this->invalidateAccessToken();
+                return $this->callApi($uri, $data, $httpMethod, $expectedContentType, $guzzleRequestOptions, true);
+            }
 
             if (($e instanceof BadResponseException)
                 && $response

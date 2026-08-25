@@ -1,3 +1,5 @@
 /php-basic/vendor/
 /php-basic/var/
+/php-website/config.json
 .env
+.idea/

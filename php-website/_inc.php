@@ -1,42 +1,65 @@
 <?php
 /**
- * shared helpers for the project-box demo scenarios.
+ * shared helpers for the project-box demo pages.
  *
- * every scenario page reads the customized project-box link from config.json
- * (the link you receive from Losys support). the scenarios differ only in the
- * surrounding HTML/CSS/JS of the host page, so you can check that the project-box
- * behaves correctly inside different website setups (page-builders, classic CMS,
+ * every page reads its settings from config.json (copy config.json.example and
+ * insert the values you received from Losys support). the pages differ only in
+ * the embedding method (iframe / HTML-tag / div+JS) and in the surrounding
+ * HTML/CSS/JS of the host page, so you can check that the project-box behaves
+ * correctly inside different website setups (page-builders, classic CMS,
  * website builders, fixed-width layouts …).
  */
 
-/** load the project-box link from config.json and fail loudly if not configured. */
+/** load the demo configuration and fail loudly if the file is missing. */
+function losys_config(): array
+{
+    $file = __DIR__ . '/config.json';
+    if (!is_file($file)) {
+        throw new RuntimeException('missing config.json - copy config.json.example to config.json and insert the values you received from Losys support!');
+    }
+    return json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
+}
+
+/** the personal link to your project-box (you receive it from Losys support). */
 function losys_link(): string
 {
-    $config = json_decode(file_get_contents(__DIR__ . '/config.json'), true, 512, JSON_THROW_ON_ERROR);
-    if (str_contains($config['link'], '(')) {
+    $config = losys_config();
+    if (str_contains($config['link'] ?? '(', '(')) {
         throw new InvalidArgumentException('you must insert the customized URI to your project-box into the file config.json!');
     }
     return rtrim($config['link'], '/');
 }
 
+/** the script URL for the HTML-tag embedding (you receive it from Losys support together with your link). */
+function losys_projectbox_script(): string
+{
+    $config = losys_config();
+    if (str_contains($config['projectbox_script'] ?? '(', '(')) {
+        throw new InvalidArgumentException('you must insert the script URL for the HTML-tag embedding into the file config.json!');
+    }
+    return $config['projectbox_script'];
+}
+
 /**
- * the navigation shared by all scenario pages so you can jump between the
- * different host-page setups while visually comparing the embedded box.
+ * the navigation shared by all demo pages so you can jump between the
+ * embedding methods and host-page setups while visually comparing the box.
  */
 function losys_nav(string $current): void
 {
     $items = [
-        'index.php'              => 'Übersicht',
-        'classic_cms.php'        => '1 · Klassisches CMS (iframe)',
-        'wordpress_builder.php'  => '2 · WordPress + Page-Builder',
-        'custom_grid.php'        => '3 · Custom / Bootstrap-Grid',
-        'website_builder.php'    => '4 · Website-Baukasten',
-        'legacy_fixed.php'       => '5 · Legacy + div/JS',
-        'iframe.php'             => 'Basis: iframe',
-        'div.php'                => 'Basis: div/JS',
+        'index.php'                    => 'Übersicht',
+        'iframe.php'                   => 'iframe · Basis',
+        'iframe_classic_cms.php'       => 'iframe 1 · Klassisches CMS',
+        'iframe_wordpress_builder.php' => 'iframe 2 · WordPress + Page-Builder',
+        'iframe_custom_grid.php'       => 'iframe 3 · Custom / Bootstrap-Grid',
+        'iframe_website_builder.php'   => 'iframe 4 · Website-Baukasten',
+        'component.php'                => 'HTML-Tag · Basis',
+        'component_styling.php'        => 'HTML-Tag · Gestaltung',
+        'div.php'                      => 'div/JS · Basis',
+        'div_legacy_fixed.php'         => 'div/JS 5 · Legacy',
     ];
     echo '<nav class="demo-switcher">';
-    echo '<strong>Project-Box Demo-Szenarien:</strong> ';
+    echo '<strong>Project-Box Demo:</strong> ';
     foreach ($items as $file => $label) {
         $active = ($file === $current) ? ' aria-current="page"' : '';
         echo '<a href="' . $file . '"' . $active . '>' . htmlspecialchars($label) . '</a>';
@@ -44,7 +67,7 @@ function losys_nav(string $current): void
     echo '</nav>';
 }
 
-/** small shared stylesheet for the demo-switcher bar (kept out of the scenario CSS on purpose). */
+/** small shared stylesheet for the demo-switcher bar (kept out of the page CSS on purpose). */
 function losys_switcher_css(): void
 {
     ?>

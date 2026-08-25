@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-<?php losys_nav('website_builder.php'); ?>
+<?php losys_nav('iframe_website_builder.php'); ?>
 
 <div class="wix-header"><div class="brand">B A U &nbsp; S T U D I O</div></div>
 

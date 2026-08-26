@@ -45,7 +45,7 @@
     </style>
 </head>
 <body>
-<?php losys_nav('legacy_fixed.php'); ?>
+<?php losys_nav('div_legacy_fixed.php'); ?>
 
 <div class="page">
     <div class="header"><h1>Schreinerei Muster</h1></div>

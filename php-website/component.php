@@ -27,7 +27,9 @@
     </p>
 
     <pre>&lt;script type="module" src="SCRIPT-ADRESSE"&gt;&lt;/script&gt;
-&lt;losys-projektbox link="IHR-BOX-LINK"&gt;&lt;/losys-projektbox&gt;</pre>
+&lt;losys-projektbox link="IHR-BOX-LINK"&gt;
+    &lt;p&gt;Die Projektübersicht kann zurzeit nicht angezeigt werden.&lt;/p&gt;
+&lt;/losys-projektbox&gt;</pre>
 
     <p class="demo-note">
         <strong>Sauber getrennt von Ihrer Seite:</strong> der Inhalt der Box wird in einem
@@ -35,6 +37,17 @@
         verändern – und die Box verändert nichts an Ihrer Seite. Wie Sie die Box trotzdem gezielt
         an Ihr Erscheinungsbild anpassen, zeigt die Seite
         <a href="component_styling.php">HTML-Tag · Gestaltung</a>.
+    </p>
+
+    <p class="demo-note">
+        <strong>Ersatzinhalt für den Notfall:</strong> Zwischen dem öffnenden und dem schliessenden
+        <code>&lt;losys-projektbox&gt;</code>-Tag können Sie beliebiges HTML hinterlegen. Solange die
+        Box lädt, bleibt dieser Inhalt unsichtbar – die Box rendert in ihrem eigenen
+        Shadow&nbsp;DOM und zeigt ihn nicht an. Lässt sich das Script dagegen gar nicht laden – etwa
+        weil die Content-Security-Policy Ihrer Seite unsere Adressen nicht erlaubt –, bleibt der
+        Ersatzinhalt stehen: Ihre Besucher sehen eine Meldung statt einer leeren Stelle.
+        Auf langsamen Verbindungen kann der Ersatzinhalt kurz aufblitzen, bevor die Box übernimmt –
+        halten Sie ihn deshalb kurz.
     </p>
 
     <p class="demo-note">
@@ -50,8 +63,12 @@
     <p>Unterhalb dieses Texts ist die Box mit genau diesem Snippet eingebunden:</p>
 
     <!-- ===== Project-Box: embedded as HTML-tag (web component, no iframe) ===== -->
+    <!-- the content between the tags is the fallback: invisible while the box
+         renders (shadow DOM), visible if the runtime cannot be loaded at all. -->
     <script type="module" src="<?php echo htmlspecialchars($script); ?>"></script>
-    <losys-projektbox link="<?php echo htmlspecialchars($link); ?>"></losys-projektbox>
+    <losys-projektbox link="<?php echo htmlspecialchars($link); ?>">
+        <p>Die Projektübersicht kann zurzeit nicht angezeigt werden.</p>
+    </losys-projektbox>
 </div>
 </body>
 </html>

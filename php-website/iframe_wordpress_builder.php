@@ -51,7 +51,7 @@
     </style>
 </head>
 <body>
-<?php losys_nav('wordpress_builder.php'); ?>
+<?php losys_nav('iframe_wordpress_builder.php'); ?>
 
 <header class="et_header">
     <div class="row">

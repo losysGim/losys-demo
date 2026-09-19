@@ -1,83 +1,63 @@
+<?php require __DIR__ . '/_inc.php'; $link = losys_link(); ?>
 <!DOCTYPE html>
-<html class="no-js" lang="de-DE" >
-    <head>
-        <title>Losys API Demo</title>
-        <meta charset="UTF-8">
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<html lang="de">
+<head>
+    <title>Project-Box – Einbindung per div/JS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php losys_switcher_css(); ?>
+    <style>
+        /* note the "my-" prefix on all class names of this page: with the div/JS
+           embedding the box markup becomes part of THIS page, so generic class
+           names could collide with the ones used inside the box. */
+        body { margin: 0; font-family: system-ui, "Segoe UI", sans-serif; color: #1f2933; line-height: 1.55; }
+        .my-wrap { max-width: 1000px; margin: 0 auto; padding: 24px 20px 64px; }
+        h1 { font-size: 24px; }
+        pre { background: #f5f7fa; border: 1px solid #e4e7eb; border-radius: 6px; padding: 12px 14px;
+            font-size: 13px; overflow-x: auto; }
+    </style>
 
-        <style>
-            .my-top, .my-left, .my-content { padding: 1rem 1rem 1rem 1rem; margin: 0.5rem 0.5rem 0.5rem 0.5rem; }
-            .my-container { display: flex; }
-            .my-column { flex-direction: column; }
-            .my-row { flex-direction: row; }
+    <!-- the div/JS embedding needs jQuery >= 3 (usually your website ships it already) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<?php losys_nav('div.php'); ?>
+<div class="my-wrap">
+    <h1>Einbindung per div/JS (Basis-Beispiel)</h1>
 
-            .my-top { background-color: aliceblue; min-height: 3rem; }
-            .my-left { background-color: antiquewhite; }
-            .my-content { background-color: lavender; flex-grow: 2; }
+    <p>
+        Dieser ältere Einbindungsweg lädt die Project-Box per JavaScript in ein
+        <code>&lt;div&gt;</code>-Element Ihrer Seite – für Webseiten, die kein iframe einsetzen
+        wollen. Er benötigt <a target="_blank" href="https://jquery.com/">jQuery</a> ab Version&nbsp;3
+        (Version&nbsp;1.x führt die mitgelieferten Scripte der Box nicht aus).
+        Für neue Integrationen ohne iframe empfehlen wir stattdessen die Einbindung per
+        <a href="component.php">HTML-Tag</a> – sie kommt ohne jQuery aus und ist sauber von
+        Ihrem Seiten-CSS getrennt.
+    </p>
 
-            #losys #project-search input[name="searchText"] { background-color: red; }
-        </style>
+    <pre>&lt;div id="losys"&gt;&lt;/div&gt;
+&lt;script&gt;
+    $(document).ready(() =&gt; {
+        $('#losys').load("IHR-BOX-LINK/box?skip_includes[]=jquery");
+    });
+&lt;/script&gt;</pre>
 
-        <!-- this is the regular Bootstrap-include from your own website -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    </head>
+    <p class="demo-note">
+        <strong>Auf CSS-Klassennamen achten:</strong> bei diesem Weg wird der Inhalt der Box Teil
+        Ihrer Seite. Generische Klassennamen Ihrer Seite können mit denen der Box kollidieren –
+        beachten Sie, wie die Klassennamen dieser Seite deshalb mit <code>my-</code> vorangestellt
+        sind. Der Parameter <code>skip_includes[]=jquery</code> sagt der Box, dass Ihre Seite
+        jQuery bereits mitbringt.
+    </p>
 
-    <body>
-<?php
-    $config = json_decode(file_get_contents('config.json'), true, 512, JSON_THROW_ON_ERROR);
-    if (str_contains($config['link'], '('))
-        throw new InvalidArgumentException('you must insert the customized URI to your project-box into the file config.json!');
-?>
-        <div class="my-container my-column">
-            <div class="my-top">
-                <h3>Top navigation</h3>
-                this is the top-level navigation of your website
-            </div>
+    <!-- ===== Project-Box: injected via jQuery .load() into this div ===== -->
+    <div id="losys"></div>
 
-            <div class="my-container my-row">
-                <div class="my-left">
-                    <h3>Navigation</h3>
-                    <ul>
-                        <li><a href="iframe.php">iFrame-Demo</a></li>
-                        <li><strong>Div-Demo</strong></li>
-                    </ul>
-                </div>
-
-                <div class="my-content">
-                    <p>this is the content-section with your regular website-content.</p>
-                    <p>we include the "Losys Project-Box" below this text using a <strong>&lt;div&gt;</strong>-element.</p>
-
-                    <p>
-                        you need to include <a target="_blank" href="https://jquery.com/">jQuery</a> included (at least in this page)
-                        of your website. the reason is that we bring along our own javascript-files inside our
-                        Project-Box. these have to be executed after downloading the Project-Box. while this is
-                        possible in plain JavaScript (without jQuery) it would still be quiet some work. jQuery simplfies
-                        that with its .load()-function
-                    </p>
-                    <p>
-                        <strong>Hint:</strong>&nbsp;
-                        we must take care not to use css-classnames that conflict with the ones from the Project-Box
-                        in this scenario. Note how we prefixed the css-classnames in this page with "my-" to avoid
-                        these conflicts.
-                    </p>
-
-                    <p>
-                        <strong>Hint:</strong>&nbsp;
-                        we can easily change the style of the project-box using css-classes in our own website. notice
-                        how the "search"-textbox is made red here!
-                    </p>
-
-                    <!-- this div is used to inject the project-box into it -->
-                    <div id="losys"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- this is the JavaScript that loads the project-box -->
-        <script>
-            $(document).ready(() => {
-                $('#losys').load("<?php echo $config['link'] . (str_ends_with($config['link'], '/') ? '' : '/') . 'box?skip_includes[]=jquery'; ?>");
-            });
-        </script>
-    </body>
+    <script>
+        $(document).ready(() => {
+            $('#losys').load("<?php echo htmlspecialchars($link); ?>/box?skip_includes[]=jquery");
+        });
+    </script>
+</div>
+</body>
 </html>

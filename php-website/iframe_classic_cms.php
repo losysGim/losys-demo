@@ -26,7 +26,7 @@
     </style>
 </head>
 <body>
-<?php losys_nav('classic_cms.php'); ?>
+<?php losys_nav('iframe_classic_cms.php'); ?>
 
 <header class="site">
     <div class="bar">

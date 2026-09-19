@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-<?php losys_nav('custom_grid.php'); ?>
+<?php losys_nav('iframe_custom_grid.php'); ?>
 
 <div class="topbar">
     <div class="container d-flex justify-content-between align-items-center">
